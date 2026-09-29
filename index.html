@@ -97,6 +97,18 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-vis
 .attest input{margin-top:4px;width:18px;height:18px;flex-shrink:0}
 .signed{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--line)}
 .signed img{height:80px;background:#fff;border:1px solid var(--line);border-radius:4px;grid-row:span 3}
+.tog{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
+.tog:last-child{border-bottom:0}
+.tog .who2{display:flex;flex-direction:column}
+.tog .who2 small{color:var(--muted)}
+.tog.off .who2{opacity:.55}
+.sw{position:relative;width:52px;height:30px;flex-shrink:0}
+.sw input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;z-index:2}
+.sw span{position:absolute;inset:0;background:var(--line);border-radius:30px;transition:background .15s}
+.sw span::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.sw input:checked+span{background:var(--ok)}
+.sw input:checked+span::after{transform:translateX(22px)}
+.sw input:focus-visible+span{outline:3px solid var(--signal);outline-offset:2px}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px;align-items:center}
 .btn{font:600 1rem "Barlow",sans-serif;padding:12px 20px;border-radius:4px;cursor:pointer;border:1.5px solid var(--steel);background:var(--steel);color:#fff}
 .btn.ghost{background:transparent;color:var(--steel);padding:8px 14px;font-size:.92rem}
@@ -214,7 +226,7 @@ const SECTIONS=[
 const IDS=[];SECTIONS.forEach(s=>s.items.forEach(()=>IDS.push("c"+(IDS.length+1))));
 
 const P=new URLSearchParams(location.search);
-const EID=P.get("id"),TOK=P.get("t"),ADM=P.get("a");
+const EID=P.get("id"),TOK=P.get("t"),ADM=P.get("a"),KEY=P.get("admin");
 const MODE=(EID&&TOK)?"sup":"emp";
 const ME=MODE; // rôle qui cote sur cette page
 const LS_KEY=MODE==="emp"?"flofab-eval-emp-v2":"flofab-eval-sup-v2-"+EID;
@@ -230,14 +242,16 @@ function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e)
 function clearDraft(){try{localStorage.removeItem(LS_KEY);}catch(e){}}
 const apiReady=()=>!/VOTRE_ID/.test(CONFIG.API_URL);
 
-async function apiGet(params){
-  const r=await fetch(CONFIG.API_URL+"?"+new URLSearchParams(params));
-  return r.json();
+const MSG_SERVICE="Le service Google ne répond pas correctement. Vérifiez dans config.js que l'adresse se termine bien par /exec et est complète, et que le déploiement Apps Script est en accès « Tout le monde » (nouvelle version publiée après chaque modification du script).";
+async function apiCall(url,opts){
+  let r,txt;
+  try{r=await fetch(url,opts);txt=await r.text();}
+  catch(e){throw new Error("Impossible de joindre le service Google. "+MSG_SERVICE);}
+  try{return JSON.parse(txt);}
+  catch(e){throw new Error(MSG_SERVICE);}
 }
-async function apiPost(body){
-  const r=await fetch(CONFIG.API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body)});
-  return r.json();
-}
+const apiGet=params=>apiCall(CONFIG.API_URL+"?"+new URLSearchParams(params));
+const apiPost=body=>apiCall(CONFIG.API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body)});
 
 /* ---------- Construction de la page ---------- */
 function legendHtml(){
@@ -447,6 +461,37 @@ async function submit(){
 }
 
 /* ---------- Démarrage ---------- */
+
+/* ---------- Panneau : gérer les destinataires ---------- */
+async function initGestion(){
+  document.getElementById("roleTag").textContent="Gestion des destinataires";
+  if(!apiReady()){app.innerHTML=`<div class="banner">Le service n'est pas configuré (CONFIG.API_URL).</div>`;return;}
+  let res;
+  try{
+    res=await apiGet({action:"gestion",cle:KEY});
+    if(!res.ok)throw new Error(res.erreur);
+  }catch(err){app.innerHTML=`<div class="banner">Accès refusé : ${esc(err.message)}</div>`;return;}
+  const row=(role,courriel,titre,actif)=>`<div class="tog${actif?"":" off"}"><div class="who2"><strong>${esc(titre)}</strong>${titre!==courriel?`<small>${esc(courriel)}</small>`:""}</div><label class="sw"><input type="checkbox" role="switch" data-role="${role}" data-c="${esc(courriel)}" aria-label="${esc(titre)}" ${actif?"checked":""}><span></span></label></div>`;
+  app.innerHTML=`<section class="sheet intro"><p>Activez ou désactivez les personnes qui reçoivent des courriels. Les changements sont enregistrés immédiatement.</p>
+    <p><strong>Administrateur désactivé</strong> : ne reçoit plus les liens d'assignation, les avis ni la copie du rapport final.<br><strong>Évaluateur désactivé</strong> : n'apparaît plus dans la liste de désignation. Une évaluation déjà assignée à cette personne reste valide.</p></section>
+    <div class="section-h"><h2>Administrateurs</h2><span>Reçoivent les assignations et les copies</span></div>
+    <section class="sheet" id="lAdm">${res.administrateurs.map(a=>row("admin",a.courriel,a.courriel,a.actif)).join("")}</section>
+    <div class="section-h"><h2>Évaluateurs</h2><span>Proposés lors de la désignation</span></div>
+    <section class="sheet" id="lEv">${res.evaluateurs.map(a=>row("eval",a.courriel,a.nom,a.actif)).join("")}</section>
+    <p class="status" id="status" aria-live="polite"></p>`;
+  app.addEventListener("change",async e=>{
+    const cb=e.target.closest("input[data-role]");if(!cb)return;
+    cb.disabled=true;setStatus("Enregistrement…");
+    try{
+      const r=await apiPost({action:"gestionMaj",cle:KEY,role:cb.dataset.role,courriel:cb.dataset.c,actif:cb.checked});
+      if(!r.ok)throw new Error(r.erreur||"Erreur inconnue.");
+      cb.closest(".tog").classList.toggle("off",!cb.checked);
+      setStatus("Enregistré.","ok");
+    }catch(err){cb.checked=!cb.checked;setStatus(err.message,"err");}
+    cb.disabled=false;
+  });
+}
+
 /* ---------- Page administrateur : désigner l'évaluateur ---------- */
 async function initAdmin(){
   document.getElementById("roleTag").textContent="Désignation de l'évaluateur";
@@ -467,7 +512,9 @@ async function initAdmin(){
       <p>Choisissez la personne qui évaluera cet employé. Elle recevra immédiatement son lien personnel pour compléter et signer l'évaluation.</p>
       ${e.evaluateur?`<p><strong>Évaluateur actuel : ${esc(e.evaluateur)}.</strong> Si vous en désignez un autre, le lien précédent cessera de fonctionner.</p>`:""}
       <label class="f" style="max-width:420px">Évaluateur *<select id="evSel"><option value="">Choisir…</option>${(lst.evaluateurs||[]).map(n=>`<option${n===e.evaluateur?" selected":""}>${esc(n)}</option>`).join("")}</select></label>
-      <div class="actions"><button class="btn" type="button" id="assign">${e.evaluateur?"Changer l'évaluateur et renvoyer le lien":"Désigner et envoyer le lien"}</button><span class="status" id="status" aria-live="polite"></span></div></section>`;
+      <div class="actions"><button class="btn" type="button" id="assign">${e.evaluateur?"Changer l'évaluateur et renvoyer le lien":"Désigner et envoyer le lien"}</button><span class="status" id="status" aria-live="polite"></span></div></section>
+      <div class="actions"><button class="btn ghost" type="button" id="gest">Gestion des destinataires (admin)</button></div>`;
+    document.getElementById("gest").onclick=()=>{const k=window.prompt("Clé d'administration :");if(k)location.href=location.pathname+"?admin="+encodeURIComponent(k.trim());};
     document.getElementById("assign").onclick=async()=>{
       const v=document.getElementById("evSel").value;
       if(!v){setStatus("Choisissez un évaluateur.","err");return;}
@@ -483,6 +530,7 @@ async function initAdmin(){
 }
 
 (async function init(){
+  if(KEY){await initGestion();return;}
   if(EID&&ADM&&!TOK){await initAdmin();return;}
   loadDraft();
   if(MODE==="emp"){

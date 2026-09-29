@@ -17,7 +17,7 @@ Formulaire d'évaluation annuelle en trois temps : l'employé remplit et signe s
 | Étape | Qui | Ce qui se passe |
 |---|---|---|
 | 1 | Employé | Ouvre la page GitHub, choisit son poste, cote les 18 critères, répond aux questions, signe et date. Aucun courriel ne lui est envoyé. |
-| 2 | Automatique | Les réponses sont enregistrées dans la feuille Google. Les 3 administrateurs reçoivent un courriel avec un lien d'assignation. |
+| 2 | Automatique | Les réponses sont enregistrées dans la feuille Google. Les administrateurs reçoivent un courriel avec un lien d'assignation. |
 | 3 | Administrateur | Ouvre le lien d'assignation et choisit l'évaluateur dans la liste. L'évaluateur reçoit aussitôt son lien personnel, et les administrateurs sont avisés. |
 | 4 | Évaluateur | Ouvre son lien (son nom est déjà inscrit), voit les cotes et réponses de l'employé, cote à son tour, commente, signe et date. |
 | 5 | Automatique | Le rapport PDF combiné (cotes côte à côte, écarts, commentaires, deux signatures datées et horodatées) est enregistré dans Google Drive et envoyé à l'évaluateur, avec copie aux administrateurs. |
@@ -34,7 +34,8 @@ Aucune donnée n'est conservée sur GitHub. Les réponses, signatures et PDF res
 2. Dans la feuille : **Extensions › Apps Script**. Supprimez le code par défaut et collez le contenu de `apps-script/Code.gs`.
 3. *(Facultatif)* Dans les paramètres du projet, cochez « Afficher le fichier manifeste appsscript.json » et collez-y le contenu de `apps-script/appsscript.json`.
 4. Vérifiez la section `CONFIG` en haut de `Code.gs` :
-   - `ADMINISTRATEURS` : michaeldugal@, jeanto@ et karynalapierre@flofab.com (déjà réglé). Ils reçoivent les liens d'assignation et une copie de chaque rapport final.
+   - `CLE_ADMIN` : choisissez une clé secrète d'au moins 8 caractères. Elle protège le panneau « Gestion des destinataires » (voir plus bas), qui reste refusé tant qu'elle n'est pas changée.
+   - `ADMINISTRATEURS` : jeanto@flofab.com (déjà réglé). Pour en ajouter, inscrivez d'autres courriels dans cette liste. Ils reçoivent les liens d'assignation et une copie de chaque rapport final.
    - `EVALUATEURS` : Daniel Marullo, Jade Marullo, Kevin Desjardins, Karyna Lapierre, Michael Dugal et Jean To (déjà réglé). Pour ajouter ou retirer un évaluateur, modifiez cette liste (nom → courriel).
    - `COURRIEL_EN_PLUS` *(facultatif)* : autres destinataires du rapport final, par exemple les RH.
    - `LOGO_FICHIER_ID` *(facultatif)* : l'ID d'un logo **PNG** déposé dans Drive, pour l'en-tête du PDF.
@@ -61,7 +62,7 @@ Aucune donnée n'est conservée sur GitHub. Les réponses, signatures et PDF res
 ### 4. Essai complet avant le lancement
 
 1. Ouvrez la page GitHub et remplissez une autoévaluation de test.
-2. Vérifiez que les 3 administrateurs reçoivent le courriel « À assigner ».
+2. Vérifiez que l'administrateur reçoit le courriel « À assigner ».
 3. Ouvrez le lien, choisissez un évaluateur (vous-même pour le test) et vérifiez qu'il reçoit son lien.
 4. Complétez l'évaluation, signez, puis vérifiez que le PDF arrive à l'évaluateur, avec copie aux administrateurs.
 5. Supprimez les lignes de test dans la feuille et les fichiers de test dans le dossier Drive **Évaluations annuelles – Flo-Fab**.
@@ -74,6 +75,18 @@ Aucune donnée n'est conservée sur GitHub. Les réponses, signatures et PDF res
 - Le lien de l'évaluateur est personnel et ne fonctionne qu'une fois.
 - La feuille Google sert de registre (statut, dates, horodatages, liens vers les fichiers). Les signatures et les PDF sont dans le dossier Drive **Évaluations annuelles – Flo-Fab**.
 
+## Gérer les destinataires (activer / désactiver)
+
+Un panneau permet aux administrateurs d'activer ou de désactiver, en un clic, les personnes qui reçoivent des courriels.
+
+- **Ouvrir le panneau** : sur la page d'assignation d'un administrateur, cliquez sur **Gestion des destinataires (admin)** et entrez la clé `CLE_ADMIN`. Vous pouvez aussi ouvrir directement `https://VOTRE-COMPTE.github.io/evaluation-annuelle/?admin=VOTRE_CLE`.
+- **Administrateur désactivé** : ne reçoit plus les liens d'assignation, les avis ni la copie du rapport final. Au moins un administrateur doit rester actif.
+- **Évaluateur désactivé** : n'apparaît plus dans la liste de désignation. Une évaluation déjà assignée à cette personne reste valide et son rapport lui est toujours envoyé.
+- Les réglages sont conservés dans le script (propriétés du script) et s'appliquent immédiatement, sans nouveau déploiement.
+- Le rôle d'administrateur et le rôle d'évaluateur se règlent séparément, même pour une personne qui a les deux.
+- Pour **ajouter** une personne, modifiez `ADMINISTRATEURS` ou `EVALUATEURS` dans `Code.gs` et publiez une nouvelle version.
+- La clé apparaît dans l'adresse quand vous ouvrez le panneau : ne partagez pas cette adresse et changez la clé si elle a été diffusée.
+
 ## Modifier le contenu
 
 - **Critères** : la liste existe dans `index.html` et dans `apps-script/Code.gs` (`SECTIONS`). Modifiez-la aux deux endroits, puis redéployez une nouvelle version du script.
@@ -84,6 +97,7 @@ Aucune donnée n'est conservée sur GitHub. Les réponses, signatures et PDF res
 
 - Le dépôt GitHub peut être public : il ne contient ni données ni adresses de courriel de personnes. Les courriels des administrateurs et des évaluateurs restent dans Apps Script.
 - Il n'y a pas de code d'accès : toute personne qui connaît l'adresse de la page peut soumettre une autoévaluation. Ne diffusez le lien qu'aux employés.
+- Le panneau de gestion est protégé par `CLE_ADMIN`. Choisissez une clé longue et gardez-la pour les administrateurs.
 - Les liens d'assignation et d'évaluation contiennent un jeton unique et long. Ne les transférez pas.
 - Les signatures sont dessinées à l'écran, avec attestation, date choisie et horodatage du serveur. Faites valider ce processus de signature électronique par les RH ou le service juridique avant de l'utiliser comme document officiel au dossier de l'employé.
 
@@ -92,11 +106,22 @@ Aucune donnée n'est conservée sur GitHub. Les réponses, signatures et PDF res
 | Symptôme | Cause probable |
 |---|---|
 | Bandeau « Configuration incomplète » | `API_URL` de `config.js` contient encore `VOTRE_ID_DE_DEPLOIEMENT`. |
+| « L'envoi a échoué » avec un message sur le service Google, ou « Unexpected token » / « jeton » | La page a reçu une page d'erreur au lieu de données : l'adresse `/exec` de `config.js` est fausse ou incomplète, le déploiement n'est pas en accès « Tout le monde », les autorisations n'ont pas été acceptées (lancer `installer`), ou la nouvelle version n'a pas été publiée. Faites le test ci-dessous. |
 | « Failed to fetch » ou envoi qui échoue | Le déploiement n'est pas en accès « Tout le monde » (un administrateur Google Workspace peut le restreindre), ou l'adresse `/exec` est incomplète. |
 | Les liens des courriels ne fonctionnent pas | `URL_FORMULAIRE` est vide, incorrecte ou sans nouvelle version du déploiement. |
 | Une modification du script sans effet | Il faut publier une **nouvelle version** du déploiement. |
+| « Clé d'administration invalide » ou « n'est pas configurée » | `CLE_ADMIN` dans `Code.gs` est encore `CHANGEZ-MOI`, trop courte (moins de 8 caractères), ou ne correspond pas à celle saisie. Republiez une nouvelle version après l'avoir changée. |
 | Erreur au démarrage sur la feuille | Supprimez l'onglet **Évaluations** (créé par une version antérieure) et relancez `installer`. |
 | La page GitHub affiche une erreur 404 | Pages n'est pas activé, ou les fichiers ne sont pas à la racine du dépôt. Attendez une minute après l'activation. |
+
+### Tester le service en 30 secondes
+
+Ouvrez dans un navigateur l'adresse `/exec` suivie de `?action=ping`, par exemple :
+
+`https://script.google.com/macros/s/VOTRE_ID/exec?action=ping`
+
+- Vous voyez `{"ok":true,"message":"Le service fonctionne."}` : le service est bon, le problème vient de `config.js` (mauvaise adresse copiée).
+- Vous voyez une page Google (connexion, « Impossible d'ouvrir le fichier », erreur de script) : reprenez l'étape 1.6 (accès « Tout le monde », nouvelle version) et l'autorisation avec `installer`.
 
 ## Limites
 
