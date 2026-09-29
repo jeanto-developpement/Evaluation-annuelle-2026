@@ -1,6 +1,6 @@
 # Évaluation annuelle – Flo-Fab
 
-Formulaire d'évaluation annuelle en trois temps : l'employé remplit et signe son autoévaluation, un administrateur désigne l'évaluateur, l'évaluateur complète et signe à son tour. Un rapport PDF combiné est ensuite envoyé automatiquement.
+Formulaire d'évaluation annuelle en trois temps : l'employé remplit et signe son autoévaluation, un administrateur désigne l'évaluateur et lui transmet son lien, l'évaluateur complète et signe à son tour. Un rapport PDF combiné est ensuite envoyé automatiquement aux administrateurs.
 
 ## Contenu du dépôt
 
@@ -18,11 +18,11 @@ Formulaire d'évaluation annuelle en trois temps : l'employé remplit et signe s
 |---|---|---|
 | 1 | Employé | Ouvre la page GitHub, choisit son poste, cote les 18 critères, répond aux questions, signe et date. Aucun courriel ne lui est envoyé. |
 | 2 | Automatique | Les réponses sont enregistrées dans la feuille Google. Les administrateurs reçoivent un courriel avec un lien d'assignation. |
-| 3 | Administrateur | Ouvre le lien d'assignation et choisit l'évaluateur dans la liste. L'évaluateur reçoit aussitôt son lien personnel, et les administrateurs sont avisés. |
-| 4 | Évaluateur | Ouvre son lien (son nom est déjà inscrit), voit les cotes et réponses de l'employé, cote à son tour, commente, signe et date. |
-| 5 | Automatique | Le rapport PDF combiné (cotes côte à côte, écarts, commentaires, deux signatures datées et horodatées) est enregistré dans Google Drive et envoyé à l'évaluateur, avec copie aux administrateurs. |
+| 3 | Administrateur | Ouvre le lien d'assignation et choisit l'évaluateur dans la liste. Le **lien personnel de l'évaluateur s'affiche à l'écran** (bouton **Copier le lien**) : l'administrateur le lui transmet lui-même. **Aucun courriel n'est envoyé à l'évaluateur.** Les administrateurs reçoivent un avis avec le même lien. |
+| 4 | Évaluateur | Ouvre le lien reçu de l'administrateur (son nom est déjà inscrit), voit les cotes et réponses de l'employé, cote à son tour, commente, signe et date. |
+| 5 | Automatique | Le rapport PDF combiné (cotes côte à côte, écarts, commentaires, deux signatures datées et horodatées) est enregistré dans Google Drive et envoyé **aux administrateurs seulement**. Ni l'employé ni l'évaluateur ne reçoivent de courriel. |
 
-Tant que l'évaluation n'est pas signée, un administrateur peut rouvrir son lien pour changer d'évaluateur : le lien précédent cesse alors de fonctionner.
+Tant que l'évaluation n'est pas signée, un administrateur peut rouvrir son lien pour retrouver le lien de l'évaluateur ou pour changer d'évaluateur : le lien précédent cesse alors de fonctionner.
 
 Aucune donnée n'est conservée sur GitHub. Les réponses, signatures et PDF restent dans le Google Drive de Flo-Fab.
 
@@ -35,7 +35,7 @@ Aucune donnée n'est conservée sur GitHub. Les réponses, signatures et PDF res
 3. *(Facultatif)* Dans les paramètres du projet, cochez « Afficher le fichier manifeste appsscript.json » et collez-y le contenu de `apps-script/appsscript.json`.
 4. Vérifiez la section `CONFIG` en haut de `Code.gs` :
    - `CLE_ADMIN` : choisissez une clé secrète d'au moins 8 caractères. Elle protège le panneau « Gestion des destinataires » (voir plus bas), qui reste refusé tant qu'elle n'est pas changée.
-   - `ADMINISTRATEURS` : jeanto@flofab.com (déjà réglé). Pour en ajouter, inscrivez d'autres courriels dans cette liste. Ils reçoivent les liens d'assignation et une copie de chaque rapport final.
+   - `ADMINISTRATEURS` : jeanto@flofab.com (déjà réglé). Pour en ajouter, inscrivez d'autres courriels dans cette liste. Ils reçoivent les liens d'assignation, les avis de désignation et chaque rapport final.
    - `EVALUATEURS` : Daniel Marullo, Jade Marullo, Kevin Desjardins, Karyna Lapierre, Michael Dugal et Jean To (déjà réglé). Pour ajouter ou retirer un évaluateur, modifiez cette liste (nom → courriel).
    - `COURRIEL_EN_PLUS` *(facultatif)* : autres destinataires du rapport final, par exemple les RH.
    - `LOGO_FICHIER_ID` *(facultatif)* : l'ID d'un logo **PNG** déposé dans Drive, pour l'en-tête du PDF.
@@ -65,12 +65,17 @@ Dans Apps Script, choisissez la fonction `diagnostic` et cliquez sur **Exécuter
 
 Vous pouvez aussi ouvrir dans un navigateur l'adresse `/exec` suivie de `?action=diagnostic` : la page affiche les mêmes vérifications (sans aucun courriel ni donnée).
 
+### 3 ter. Tester l'envoi de courriels
+
+- **Depuis l'éditeur** : exécutez la fonction `testerCourriel`. Elle envoie un courriel de test au premier administrateur et affiche le quota restant dans le journal. La première fois, Google demande d'autoriser l'envoi de courriels : acceptez.
+- **Depuis le service déployé** (le test le plus fiable, car c'est ce que les employés utilisent) : ouvrez le panneau « Gestion des destinataires » et cliquez sur **Envoyer un courriel de test aux administrateurs**. La section **État du service** du même panneau affiche en direct si la feuille, Drive, l'envoi de courriels et `URL_FORMULAIRE` sont bons.
+
 ### 4. Essai complet avant le lancement
 
 1. Ouvrez la page GitHub et remplissez une autoévaluation de test.
 2. Vérifiez que l'administrateur reçoit le courriel « À assigner ».
-3. Ouvrez le lien, choisissez un évaluateur (vous-même pour le test) et vérifiez qu'il reçoit son lien.
-4. Complétez l'évaluation, signez, puis vérifiez que le PDF arrive à l'évaluateur, avec copie aux administrateurs.
+3. Ouvrez le lien, choisissez un évaluateur : le lien personnel doit s'afficher avec le bouton **Copier le lien**, et l'avis doit arriver aux administrateurs.
+4. Ouvrez ce lien, complétez l'évaluation, signez, puis vérifiez que le PDF arrive aux administrateurs.
 5. Supprimez les lignes de test dans la feuille et les fichiers de test dans le dossier Drive **Évaluations annuelles – Flo-Fab**.
 
 ## Utilisation
@@ -78,7 +83,7 @@ Vous pouvez aussi ouvrir dans un navigateur l'adresse `/exec` suivie de `?action
 - Envoyez simplement le lien GitHub Pages aux employés. Il n'y a pas de code d'accès.
 - Le brouillon est conservé dans le navigateur de chaque personne jusqu'à l'envoi.
 - Les 18 cotes, la signature, la date et la case de confirmation sont obligatoires pour envoyer.
-- Le lien de l'évaluateur est personnel et ne fonctionne qu'une fois.
+- Le lien de l'évaluateur est personnel et ne fonctionne qu'une fois. Comme il n'est pas envoyé par courriel, l'administrateur le copie depuis sa page d'assignation (il peut y revenir à tout moment) et le transmet à l'évaluateur.
 - La feuille Google sert de registre (statut, dates, horodatages, liens vers les fichiers). Les signatures et les PDF sont dans le dossier Drive **Évaluations annuelles – Flo-Fab**.
 
 ## Gérer les destinataires (activer / désactiver)
@@ -86,8 +91,8 @@ Vous pouvez aussi ouvrir dans un navigateur l'adresse `/exec` suivie de `?action
 Un panneau permet aux administrateurs d'activer ou de désactiver, en un clic, les personnes qui reçoivent des courriels.
 
 - **Ouvrir le panneau** : sur la page d'assignation d'un administrateur, cliquez sur **Gestion des destinataires (admin)** et entrez la clé `CLE_ADMIN`. Vous pouvez aussi ouvrir directement `https://VOTRE-COMPTE.github.io/evaluation-annuelle/?admin=VOTRE_CLE`.
-- **Administrateur désactivé** : ne reçoit plus les liens d'assignation, les avis ni la copie du rapport final. Au moins un administrateur doit rester actif.
-- **Évaluateur désactivé** : n'apparaît plus dans la liste de désignation. Une évaluation déjà assignée à cette personne reste valide et son rapport lui est toujours envoyé.
+- **Administrateur désactivé** : ne reçoit plus les liens d'assignation, les avis ni le rapport final. Au moins un administrateur doit rester actif.
+- **Évaluateur désactivé** : n'apparaît plus dans la liste de désignation. Une évaluation déjà assignée à cette personne reste valide.
 - Les réglages sont conservés dans le script (propriétés du script) et s'appliquent immédiatement, sans nouveau déploiement.
 - Le rôle d'administrateur et le rôle d'évaluateur se règlent séparément, même pour une personne qui a les deux.
 - Pour **ajouter** une personne, modifiez `ADMINISTRATEURS` ou `EVALUATEURS` dans `Code.gs` et publiez une nouvelle version.
@@ -104,7 +109,7 @@ Un panneau permet aux administrateurs d'activer ou de désactiver, en un clic, l
 - Le dépôt GitHub peut être public : il ne contient ni données ni adresses de courriel de personnes. Les courriels des administrateurs et des évaluateurs restent dans Apps Script.
 - Il n'y a pas de code d'accès : toute personne qui connaît l'adresse de la page peut soumettre une autoévaluation. Ne diffusez le lien qu'aux employés.
 - Le panneau de gestion est protégé par `CLE_ADMIN`. Choisissez une clé longue et gardez-la pour les administrateurs.
-- Les liens d'assignation et d'évaluation contiennent un jeton unique et long. Ne les transférez pas.
+- Les liens d'assignation et d'évaluation contiennent un jeton unique et long. Le lien d'assignation reste entre administrateurs ; le lien d'évaluation ne se transmet qu'à l'évaluateur désigné.
 - Les signatures sont dessinées à l'écran, avec attestation, date choisie et horodatage du serveur. Faites valider ce processus de signature électronique par les RH ou le service juridique avant de l'utiliser comme document officiel au dossier de l'employé.
 
 ## Dépannage
@@ -115,6 +120,8 @@ Un panneau permet aux administrateurs d'activer ou de désactiver, en un clic, l
 | « L'envoi a échoué » avec un message sur le service Google, ou « Unexpected token » / « jeton » | La page a reçu une page d'erreur au lieu de données : l'adresse `/exec` de `config.js` est fausse ou incomplète, le déploiement n'est pas en accès « Tout le monde », les autorisations n'ont pas été acceptées (lancer `installer`), ou la nouvelle version n'a pas été publiée. Faites le test ci-dessous. |
 | Rien ne se passe au clic sur « Signer et envoyer » | Un champ obligatoire manque : le formulaire l'encadre en rouge et affiche une bulle rouge en bas de l'écran (nom, poste, les 18 cotes, signature, date, case de confirmation). |
 | Bandeau rouge « Le service d'envoi ne répond pas » à l'ouverture de la page | Même cause que le message sur le service Google ci-dessous : reprenez le test `?action=ping` et le diagnostic. |
+| Le courriel n'arrive pas (aux administrateurs) | Regardez d'abord les **courriers indésirables** (l'expéditeur est le compte Google qui a déployé le script). Puis cliquez sur « Envoyer un courriel de test » dans le panneau de gestion : si Google refuse, le message exact s'affiche. Causes fréquentes : autorisation d'envoi non accordée (exécutez `testerCourriel`, acceptez, puis publiez une **nouvelle version**), quota atteint (100 par jour avec un compte Gmail gratuit, environ 1 500 avec Google Workspace), adresse mal écrite dans `ADMINISTRATEURS` ou `EVALUATEURS`. |
+| Le courriel arrive mais le lien ne fonctionne pas | `URL_FORMULAIRE` dans `Code.gs` n'est pas l'adresse de la page GitHub. Le système refuse maintenant d'enregistrer tant qu'elle est encore à l'état d'exemple. |
 | « Le courriel … n'a pas pu être envoyé » | Google a refusé l'envoi (adresse invalide dans `ADMINISTRATEURS` / `EVALUATEURS`, autorisation « envoi de courriels » non accordée, ou quota quotidien atteint). Rien n'est enregistré ni verrouillé : corrigez et réessayez. Lancez `diagnostic` pour voir le quota restant. |
 | « Failed to fetch » ou envoi qui échoue | Le déploiement n'est pas en accès « Tout le monde » (un administrateur Google Workspace peut le restreindre), ou l'adresse `/exec` est incomplète. |
 | Les liens des courriels ne fonctionnent pas | `URL_FORMULAIRE` est vide, incorrecte ou sans nouvelle version du déploiement. |
@@ -135,7 +142,7 @@ Ouvrez dans un navigateur l'adresse `/exec` suivie de `?action=ping`, par exempl
 ### Ce que le système fait en cas d'échec
 
 - Si le courriel aux administrateurs échoue, l'autoévaluation n'est **pas** enregistrée : l'employé peut réessayer sans créer de doublon.
-- Si le courriel à l'évaluateur échoue, l'assignation est annulée : l'administrateur peut réessayer avec le même lien.
+- Si l'avis de désignation aux administrateurs échoue, l'assignation reste valide : le lien de l'évaluateur s'affiche quand même à l'écran.
 - Si l'envoi du rapport final échoue, l'évaluation n'est **pas** verrouillée : l'évaluateur peut réessayer avec le même lien.
 - Si Google n'arrive pas à créer le PDF avec les images (signatures, logo), il produit un rapport sans images plutôt que d'échouer.
 

@@ -113,6 +113,8 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-vis
 .sw input:checked+span{background:var(--ok)}
 .sw input:checked+span::after{transform:translateX(22px)}
 .sw input:focus-visible+span{outline:3px solid var(--signal);outline-offset:2px}
+.lienbox{margin:14px 0;padding:14px;border:1px dashed var(--steel);border-radius:6px;background:var(--steel-soft)}
+.lienbox input{font-size:.85rem}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px;align-items:center}
 .btn{font:600 1rem "Barlow",sans-serif;padding:12px 20px;border-radius:4px;cursor:pointer;border:1.5px solid var(--steel);background:var(--steel);color:#fff}
 .btn.ghost{background:transparent;color:var(--steel);padding:8px 14px;font-size:.92rem}
@@ -268,7 +270,7 @@ function legendHtml(){
    <div><b>3</b>Répond aux attentes</div><div><b>4</b>Surpasse parfois les attentes</div><div><b>5</b>Surpasse de loin les attentes</div></div>`;
 }
 function introHtml(){
-  if(MODE==="sup") return `<section class="sheet intro"><p>L'employé a complété son autoévaluation. Ses cotes sont affichées en bleu à titre de référence. Attribuez votre propre cote pour chaque critère, ajoutez vos commentaires, puis signez. Le rapport final combiné sera envoyé automatiquement par courriel à vous et aux administrateurs.</p></section>`;
+  if(MODE==="sup") return `<section class="sheet intro"><p>L'employé a complété son autoévaluation. Ses cotes sont affichées en bleu à titre de référence. Attribuez votre propre cote pour chaque critère, ajoutez vos commentaires, puis signez. Le rapport final combiné sera envoyé automatiquement par courriel aux administrateurs.</p></section>`;
   return `<section class="sheet intro">
     <p>Vous êtes invité à procéder à votre autoévaluation à l'aide de la grille ci-dessous. Que pensez-vous de vous-même? De vos forces et de vos faiblesses? Sont-elles les mêmes que l'année dernière? Avez-vous démontré des efforts? Du progrès?</p>
     <p>Votre évaluateur procédera également à votre évaluation avec la même grille, puis vous comparerez ensemble vos appréciations lors de la rencontre.</p>
@@ -476,7 +478,7 @@ async function submit(){
     clearDraft();
     app.innerHTML=MODE==="emp"
      ?`<section class="sheet done"><h2>Autoévaluation envoyée</h2><p>Merci. Votre autoévaluation a été envoyée. Les administrateurs ont été avisés et désigneront l'évaluateur, qui la comparera avec vous lors de la rencontre.</p></section>`
-     :`<section class="sheet done"><h2>Rapport final envoyé</h2><p>Le rapport combiné (autoévaluation et évaluation de l'évaluateur) a été envoyé en PDF par courriel à vous et aux administrateurs.</p></section>`;
+     :`<section class="sheet done"><h2>Rapport final envoyé</h2><p>Le rapport combiné (autoévaluation et évaluation de l'évaluateur) a été envoyé en PDF par courriel aux administrateurs.</p></section>`;
     window.scrollTo({top:0});
   }catch(err){
     setStatus("L'envoi a échoué : "+err.message,"err");btn.disabled=false;
@@ -501,7 +503,25 @@ async function initGestion(){
     <section class="sheet" id="lAdm">${res.administrateurs.map(a=>row("admin",a.courriel,a.courriel,a.actif)).join("")}</section>
     <div class="section-h"><h2>Évaluateurs</h2><span>Proposés lors de la désignation</span></div>
     <section class="sheet" id="lEv">${res.evaluateurs.map(a=>row("eval",a.courriel,a.nom,a.actif)).join("")}</section>
-    <p class="status" id="status" aria-live="polite"></p>`;
+    <div class="section-h"><h2>État du service</h2><span>Vérification en direct</span></div>
+    <section class="sheet" id="etat"><p style="margin:0;color:var(--muted)">Vérification…</p></section>
+    <div class="actions"><button class="btn" type="button" id="testMail">Envoyer un courriel de test aux administrateurs</button><span class="status" id="status" aria-live="polite"></span></div>`;
+  apiGet({action:"diagnostic"}).then(d=>{
+    const li=(okv,txt)=>`<div class="tog"><span>${esc(txt)}</span><strong style="color:var(${okv?"--ok":"--alert"})">${okv?"OK":"À corriger"}</strong></div>`;
+    document.getElementById("etat").innerHTML=
+      li(d.feuille,"Feuille Google (enregistrement des réponses)")+li(d.drive,"Dossier Drive (signatures et PDF)")+
+      li(d.courriel,"Envoi de courriels"+(d.courriels_restants!=null?" — "+d.courriels_restants+" envois restants aujourd'hui":""))+
+      li(d.url_formulaire,"Adresse de la page dans Code.gs (URL_FORMULAIRE)")+li(d.cle_admin,"Clé d'administration (CLE_ADMIN)");
+  }).catch(()=>{document.getElementById("etat").innerHTML=`<p style="margin:0;color:var(--alert)">Vérification impossible.</p>`;});
+  document.getElementById("testMail").onclick=async()=>{
+    const b=document.getElementById("testMail");b.disabled=true;setStatus("Envoi du test…");
+    try{
+      const r=await apiPost({action:"testCourriel",cle:KEY});
+      if(!r.ok)throw new Error(r.erreur||"Erreur inconnue.");
+      setStatus(`Courriel de test envoyé à ${r.destinataires} administrateur${r.destinataires>1?"s":""}. Vérifiez la boîte de réception (et les courriers indésirables).`,"ok");
+    }catch(err){setStatus(err.message,"err");}
+    b.disabled=false;
+  };
   app.addEventListener("change",async e=>{
     const cb=e.target.closest("input[data-role]");if(!cb)return;
     cb.disabled=true;setStatus("Enregistrement…");
@@ -516,6 +536,18 @@ async function initGestion(){
 }
 
 /* ---------- Page administrateur : désigner l'évaluateur ---------- */
+function lienBloc(lien){
+  if(!lien)return "";
+  return `<div class="lienbox"><label class="f">Lien personnel de l'évaluateur<input type="text" id="lienEv" readonly value="${esc(lien)}"></label><div class="actions" style="margin-top:8px"><button class="btn" type="button" id="copyLien">Copier le lien</button><a class="btn ghost" href="${esc(lien)}" target="_blank" rel="noopener" style="text-decoration:none">Ouvrir</a></div></div>`;
+}
+function bindCopy(){
+  const b=document.getElementById("copyLien");if(!b)return;
+  b.onclick=async()=>{
+    const i=document.getElementById("lienEv");
+    try{await navigator.clipboard.writeText(i.value);}catch(e){i.select();try{document.execCommand("copy");}catch(_){}}
+    b.textContent="Lien copié ✓";setTimeout(()=>{b.textContent="Copier le lien";},2500);
+  };
+}
 async function initAdmin(){
   document.getElementById("roleTag").textContent="Désignation de l'évaluateur";
   if(!apiReady()){app.innerHTML=`<div class="banner">Le service n'est pas configuré (CONFIG.API_URL).</div>`;return;}
@@ -532,11 +564,12 @@ async function initAdmin(){
       <div class="f"><label class="f">Année évaluée</label><span class="ro">${esc(e.identite.annee)}</span></div>
       <div class="f"><label class="f">Autoévaluation signée le</label><span class="ro">${esc(e.date_signature)}</span></div></div></section>
       <section class="sheet intro"><h3 style="font-size:1.4rem;margin-bottom:8px">Désigner l'évaluateur</h3>
-      <p>Choisissez la personne qui évaluera cet employé. Elle recevra immédiatement son lien personnel pour compléter et signer l'évaluation.</p>
-      ${e.evaluateur?`<p><strong>Évaluateur actuel : ${esc(e.evaluateur)}.</strong> Si vous en désignez un autre, le lien précédent cessera de fonctionner.</p>`:""}
+      <p>Choisissez la personne qui évaluera cet employé. Son lien personnel s'affichera ici : copiez-le et transmettez-le vous-même. Aucun courriel n'est envoyé à l'évaluateur.</p>
+      ${e.evaluateur?`<p><strong>Évaluateur actuel : ${esc(e.evaluateur)}.</strong> Si vous en désignez un autre, le lien précédent cessera de fonctionner.</p>${lienBloc(e.lien_evaluateur)}`:""}
       <label class="f" style="max-width:420px">Évaluateur *<select id="evSel"><option value="">Choisir…</option>${(lst.evaluateurs||[]).map(n=>`<option${n===e.evaluateur?" selected":""}>${esc(n)}</option>`).join("")}</select></label>
-      <div class="actions"><button class="btn" type="button" id="assign">${e.evaluateur?"Changer l'évaluateur et renvoyer le lien":"Désigner et envoyer le lien"}</button><span class="status" id="status" aria-live="polite"></span></div></section>
+      <div class="actions"><button class="btn" type="button" id="assign">${e.evaluateur?"Changer l'évaluateur (nouveau lien)":"Désigner l'évaluateur"}</button><span class="status" id="status" aria-live="polite"></span></div></section>
       <div class="actions"><button class="btn ghost" type="button" id="gest">Gestion des destinataires (admin)</button></div>`;
+    bindCopy();
     document.getElementById("gest").onclick=()=>{const k=window.prompt("Clé d'administration :");if(k)location.href=location.pathname+"?admin="+encodeURIComponent(k.trim());};
     document.getElementById("assign").onclick=async()=>{
       const v=document.getElementById("evSel").value;
@@ -545,7 +578,7 @@ async function initAdmin(){
       try{
         const r2=await apiPost({action:"assigner",id:EID,jeton_admin:ADM,evaluateur:v});
         if(!r2.ok)throw new Error(r2.erreur||"Erreur inconnue.");
-        app.innerHTML=`<section class="sheet done"><h2>Évaluateur désigné</h2><p>Le lien d'évaluation a été envoyé à ${esc(v)} par courriel. Les administrateurs ont été avisés par courriel. Vous pouvez rouvrir ce lien pour changer d'évaluateur tant que l'évaluation n'est pas signée.</p></section>`;
+        app.innerHTML=`<section class="sheet done"><h2>Évaluateur désigné : ${esc(v)}</h2><p>Aucun courriel n'a été envoyé à l'évaluateur. Copiez son lien personnel ci-dessous et transmettez-le-lui (il ne fonctionne qu'une fois).</p>${lienBloc(r2.lien)}<p>${r2.avis?"Les administrateurs ont reçu le même lien par courriel.":"L'avis par courriel aux administrateurs n'a pas pu être envoyé, mais ce lien est valide."} Vous pouvez rouvrir votre lien d'assignation pour le retrouver ou changer d'évaluateur tant que l'évaluation n'est pas signée.</p></section>`;bindCopy();
         window.scrollTo({top:0});
       }catch(err){setStatus("L'envoi a échoué : "+err.message,"err");btn.disabled=false;}
     };
