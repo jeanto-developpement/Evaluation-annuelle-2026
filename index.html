@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Évaluation annuelle – Flo-Fab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --paper:#F5F7F9; --sheet:#FFFFFF; --ink:#1C2630; --muted:#5B6873;
+  --line:#D5DCE2; --steel:#0E4F8B; --steel-soft:#E3EDF7; --signal:#E8A317; --signal-soft:#FDF3DC; --alert:#B8431F; --ok:#2E7D4F;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#11171D; --sheet:#1A222A; --ink:#E6ECF1; --muted:#9AA8B4;
+    --line:#2F3B46; --steel:#6FA8DE; --steel-soft:#1E3247; --signal:#F0B84A; --signal-soft:#3A2F17; --alert:#E07A56; --ok:#6CC08F;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#11171D; --sheet:#1A222A; --ink:#E6ECF1; --muted:#9AA8B4;
+  --line:#2F3B46; --steel:#6FA8DE; --steel-soft:#1E3247; --signal:#F0B84A; --signal-soft:#3A2F17; --alert:#E07A56; --ok:#6CC08F;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 16px/1.5 "Barlow",system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 64px}
+h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;line-height:1.1;margin:0}
+header.top{border-left:6px solid var(--steel);padding:8px 0 8px 18px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap-reverse}
+header.top h1{font-size:clamp(2rem,5vw,3rem)}
+header.top p{margin:4px 0 0;color:var(--muted);font-size:1.05rem}
+.logo{height:72px;width:auto;max-width:100%;flex-shrink:0}
+.role{display:inline-block;margin-top:8px;padding:2px 10px;border-radius:3px;background:var(--steel-soft);color:var(--steel);font-weight:600;font-size:.9rem}
+.sheet{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:20px;margin-bottom:20px}
+.ident{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+label.f{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:.9rem;color:var(--muted)}
+.ro{font-weight:600;color:var(--ink);font-size:1rem}
+input[type=text],input[type=email],input[type=date],input[type=password],select,textarea{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:8px 10px;width:100%}
+textarea{resize:vertical;min-height:70px}
+input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+.intro p{margin:0 0 10px;max-width:72ch}
+.intro ol{margin:10px 0 0;padding-left:20px;max-width:72ch}
+.intro li{margin-bottom:6px}
+.legend{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:10px 14px;margin-bottom:20px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;font-size:.8rem;line-height:1.25}
+.legend div{display:flex;gap:6px;align-items:flex-start}
+.legend b{font-family:"Barlow Condensed",sans-serif;font-size:1.3rem;line-height:1;color:var(--steel)}
+.section-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:32px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--ink)}
+.section-h h2{font-size:1.7rem}
+.section-h span{color:var(--muted);font-size:.9rem;white-space:nowrap}
+.item{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:12px;display:grid;grid-template-columns:44px 1fr;gap:4px 14px}
+.item.missing{border-color:var(--alert);box-shadow:inset 4px 0 0 var(--alert)}
+.num{font-family:"Barlow Condensed",sans-serif;font-size:1.9rem;font-weight:700;color:var(--steel);line-height:1}
+.item h3{font-size:1.3rem}
+.item .desc{margin:4px 0 12px;color:var(--muted);max-width:70ch}
+.body{grid-column:2}
+.rate{display:flex;align-items:center;gap:10px;margin:6px 0;flex-wrap:wrap}
+.rate .who{width:110px;font-weight:600;font-size:.9rem}
+.seg{display:flex;gap:6px}
+.seg button{width:44px;height:40px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);border-radius:4px;font:600 1rem "Barlow",sans-serif;cursor:pointer}
+.seg button:hover:not(:disabled){border-color:var(--steel)}
+.seg button:disabled{cursor:default;opacity:.55}
+.seg button[aria-pressed="true"]{background:var(--steel);border-color:var(--steel);color:#fff;opacity:1}
+.rate.sup .seg button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--sheet)}
+.gap{margin-top:8px;font-size:.88rem;padding:6px 10px;border-radius:4px;display:none}
+.gap.show{display:block;background:var(--signal-soft);border-left:4px solid var(--signal)}
+.ecom{margin:10px 0 0;padding:8px 12px;border-left:3px solid var(--steel);background:var(--steel-soft);font-size:.92rem;white-space:pre-wrap}
+.ecom b{display:block;font-size:.8rem;color:var(--muted)}
+.item details{margin-top:10px}
+.item summary{cursor:pointer;color:var(--steel);font-weight:600;font-size:.92rem}
+.item details textarea{margin-top:8px}
+.summary table{width:100%;border-collapse:collapse;font-size:.95rem}
+.tscroll{overflow-x:auto}
+.summary th,.summary td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+.summary th{font-family:"Barlow Condensed",sans-serif;font-size:1.05rem}
+.summary .n{text-align:right;font-variant-numeric:tabular-nums}
+.summary tr.total td{font-weight:700;border-top:2px solid var(--ink)}
+.bigs{display:flex;gap:28px;flex-wrap:wrap;margin-bottom:16px}
+.bigs div{display:flex;flex-direction:column}
+.bigs strong{font-family:"Barlow Condensed",sans-serif;font-size:2.4rem;line-height:1}
+.bigs span{color:var(--muted);font-size:.88rem}
+.watch{margin-top:14px;color:var(--alert);font-weight:600}
+.open h3{font-size:1.25rem;margin-bottom:8px}
+.open textarea{min-height:120px;margin-bottom:18px}
+.answer{white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px;margin-bottom:18px;min-height:44px}
+.sigwrap h3{font-size:1.25rem;margin-bottom:8px}
+.pad{position:relative;border:1.5px dashed var(--muted);border-radius:6px;background:#fff;height:170px;touch-action:none}
+.pad canvas{width:100%;height:100%;display:block;border-radius:6px;cursor:crosshair}
+.pad .hint{position:absolute;left:14px;bottom:10px;color:#8A96A0;font-size:.85rem;pointer-events:none}
+.sigrow{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-top:10px}
+.sigrow label.f{min-width:180px}
+.attest{display:flex;gap:10px;align-items:flex-start;margin-top:14px;max-width:72ch;font-size:.95rem}
+.attest input{margin-top:4px;width:18px;height:18px;flex-shrink:0}
+.signed{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.signed img{height:80px;background:#fff;border:1px solid var(--line);border-radius:4px;grid-row:span 3}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px;align-items:center}
+.btn{font:600 1rem "Barlow",sans-serif;padding:12px 20px;border-radius:4px;cursor:pointer;border:1.5px solid var(--steel);background:var(--steel);color:#fff}
+.btn.ghost{background:transparent;color:var(--steel);padding:8px 14px;font-size:.92rem}
+.btn:disabled{opacity:.6;cursor:wait}
+.status{font-weight:600}
+.status.err{color:var(--alert)}
+.status.ok{color:var(--ok)}
+.banner{padding:12px 16px;border-radius:6px;margin-bottom:20px;border-left:5px solid var(--alert);background:var(--signal-soft)}
+.done{text-align:left;padding:32px 24px}
+.done h2{font-size:2rem;margin-bottom:10px;color:var(--ok)}
+.done p{max-width:62ch}
+@media (max-width:640px){
+  .logo{height:52px}
+  .legend{grid-template-columns:1fr 1fr;font-size:.75rem}
+  .legend div:last-child{grid-column:span 2}
+  .item{grid-template-columns:1fr}
+  .body{grid-column:1}
+  .rate .who{width:100%}
+  .seg{flex:1}
+  .seg button{width:auto;flex:1;min-width:40px}
+}
+@media print{
+  :root{--paper:#fff;--sheet:#fff;--ink:#000;--muted:#333;--line:#999}
+  body{font-size:11pt}
+  .legend{position:static}
+  .actions,.btn{display:none}
+  .item{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Évaluation annuelle <span id="yr">2026</span></h1>
+      <p>Grille d'évaluation des compétences et qualités — Assembleur pompe · Assembleur système · Soudeur · Journalier · Peintre · M.O.I.</p>
+      <span class="role" id="roleTag">Autoévaluation de l'employé</span>
+    </div>
+    <svg class="logo" role="img" aria-label="Flo-Fab" viewBox="0 0 621 269" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M21.3195 253.008C21.3195 258.444 17.2124 261.263 12.0948 261.263H8.28101V268.311H3.2612V244.819H12.5837C18.0273 244.819 21.3195 248.142 21.3195 252.941V253.008ZM16.2345 253.108V253.041C16.2345 250.726 14.6699 249.484 12.16 249.484H8.28101V256.666H12.2577C14.7676 256.666 16.2345 255.122 16.2345 253.108Z" fill="#2798F5"/>
+<path d="M45.2115 258.075C45.2115 265.19 41.3325 268.68 35.2044 268.68C29.0764 268.68 25.3278 265.156 25.3278 258.243V244.819H30.3476V258.109C30.3476 261.934 32.2056 263.914 35.2696 263.914C38.3337 263.914 40.1916 262.001 40.1916 258.276V244.819H45.2115V258.075Z" fill="#2798F5"/>
+<path d="M73.7937 268.311H68.8065V252.974L62.3851 263.008H62.2547L55.8984 253.075V268.311H50.9764V244.819H56.3874L62.3851 254.753L68.3828 244.819H73.7937V268.311Z" fill="#2798F5"/>
+<path d="M97.9854 253.008C97.9854 258.444 93.8783 261.263 88.7607 261.263H84.947V268.311H79.9271V244.819H89.2496C94.6932 244.819 97.9854 248.142 97.9854 252.941V253.008ZM92.9004 253.108V253.041C92.9004 250.726 91.3358 249.484 88.8259 249.484H84.947V256.666H88.9237C91.4336 256.666 92.9004 255.122 92.9004 253.108Z" fill="#2798F5"/>
+<path d="M129.27 261.364C129.27 266.029 125.815 268.646 120.893 268.646C117.438 268.646 113.95 267.404 111.212 264.888L114.178 261.23C116.232 262.975 118.383 264.082 120.991 264.082C123.044 264.082 124.283 263.243 124.283 261.867V261.8C124.283 260.491 123.501 259.82 119.687 258.813C115.091 257.605 112.125 256.296 112.125 251.632V251.565C112.125 247.303 115.45 244.484 120.111 244.484C123.436 244.484 126.272 245.558 128.586 247.47L125.978 251.363C123.957 249.92 121.969 249.048 120.046 249.048C118.122 249.048 117.112 249.954 117.112 251.095V251.162C117.112 252.706 118.09 253.209 122.034 254.249C126.663 255.491 129.27 257.203 129.27 261.297V261.364Z" fill="#2798F5"/>
+<path d="M157.52 256.565C157.52 263.243 152.402 268.713 145.361 268.713C138.321 268.713 133.268 263.31 133.268 256.632V256.565C133.268 249.887 138.386 244.417 145.427 244.417C152.467 244.417 157.52 249.82 157.52 256.498V256.565ZM152.272 256.632V256.565C152.272 252.538 149.403 249.182 145.361 249.182C141.32 249.182 138.516 252.471 138.516 256.498V256.565C138.516 260.592 141.385 263.948 145.427 263.948C149.469 263.948 152.272 260.659 152.272 256.632Z" fill="#2798F5"/>
+<path d="M179.021 268.311H162.625V244.819H167.644V263.612H179.021V268.311Z" fill="#2798F5"/>
+<path d="M202.347 258.075C202.347 265.19 198.468 268.68 192.34 268.68C186.212 268.68 182.463 265.156 182.463 258.243V244.819H187.483V258.109C187.483 261.934 189.341 263.914 192.405 263.914C195.469 263.914 197.327 262.001 197.327 258.276V244.819H202.347V258.075Z" fill="#2798F5"/>
+<path d="M225.388 249.585H218.445V268.311H213.425V249.585H206.482V244.819H225.388V249.585Z" fill="#2798F5"/>
+<path d="M235.148 268.311H230.128V244.819H235.148V268.311Z" fill="#2798F5"/>
+<path d="M264.743 256.565C264.743 263.243 259.626 268.713 252.585 268.713C245.544 268.713 240.492 263.31 240.492 256.632V256.565C240.492 249.887 245.609 244.417 252.65 244.417C259.691 244.417 264.743 249.82 264.743 256.498V256.565ZM259.495 256.632V256.565C259.495 252.538 256.627 249.182 252.585 249.182C248.543 249.182 245.74 252.471 245.74 256.498V256.565C245.74 260.592 248.608 263.948 252.65 263.948C256.692 263.948 259.495 260.659 259.495 256.632Z" fill="#2798F5"/>
+<path d="M290.123 268.311H285.853L274.803 253.377V268.311H269.848V244.819H274.477L285.168 259.283V244.819H290.123V268.311Z" fill="#2798F5"/>
+<path d="M312.746 261.364C312.746 266.029 309.291 268.646 304.369 268.646C300.914 268.646 297.426 267.404 294.688 264.888L297.654 261.23C299.708 262.975 301.859 264.082 304.467 264.082C306.52 264.082 307.759 263.243 307.759 261.867V261.8C307.759 260.491 306.977 259.82 303.163 258.813C298.567 257.605 295.6 256.296 295.6 251.632V251.565C295.6 247.303 298.925 244.484 303.587 244.484C306.911 244.484 309.747 245.558 312.062 247.47L309.454 251.363C307.433 249.92 305.445 249.048 303.521 249.048C301.598 249.048 300.588 249.954 300.588 251.095V251.162C300.588 252.706 301.566 253.209 305.51 254.249C310.138 255.491 312.746 257.203 312.746 261.297V261.364Z" fill="#2798F5"/>
+<path d="M350.996 268.311H346.009V252.974L339.587 263.008H339.457L333.101 253.075V268.311H328.179V244.819H333.59L339.587 254.753L345.585 244.819H350.996V268.311Z" fill="#2798F5"/>
+<path d="M379.36 268.311H374.112L372.026 263.042H362.378L360.291 268.311H355.174L364.953 244.652H369.581L379.36 268.311ZM370.233 258.478L367.202 250.86L364.17 258.478H370.233Z" fill="#2798F5"/>
+<path d="M403.809 268.311H399.539L388.488 253.377V268.311H383.534V244.819H388.162L398.854 259.283V244.819H403.809V268.311Z" fill="#2798F5"/>
+<path d="M429.463 258.075C429.463 265.19 425.584 268.68 419.456 268.68C413.328 268.68 409.579 265.156 409.579 258.243V244.819H414.599V258.109C414.599 261.934 416.457 263.914 419.521 263.914C422.585 263.914 424.443 262.001 424.443 258.276V244.819H429.463V258.075Z" fill="#2798F5"/>
+<path d="M452.602 249.518H440.248V254.518H451.135V259.216H440.248V268.311H435.228V244.819H452.602V249.518Z" fill="#2798F5"/>
+<path d="M476.892 268.311H471.644L469.557 263.042H459.909L457.823 268.311H452.705L462.484 244.652H467.113L476.892 268.311ZM467.765 258.478L464.733 250.86L461.702 258.478H467.765Z" fill="#2798F5"/>
+<path d="M499.647 264.518C497.301 267.102 494.693 268.713 490.292 268.713C483.578 268.713 478.59 263.377 478.59 256.632V256.565C478.59 249.887 483.48 244.417 490.488 244.417C494.791 244.417 497.366 245.893 499.484 248.041L496.29 251.833C494.53 250.189 492.737 249.182 490.455 249.182C486.609 249.182 483.838 252.471 483.838 256.498V256.565C483.838 260.592 486.544 263.948 490.455 263.948C493.063 263.948 494.66 262.874 496.453 261.196L499.647 264.518Z" fill="#2798F5"/>
+<path d="M521.594 249.585H514.651V268.311H509.631V249.585H502.688V244.819H521.594V249.585Z" fill="#2798F5"/>
+<path d="M545.632 258.075C545.632 265.19 541.753 268.68 535.624 268.68C529.496 268.68 525.748 265.156 525.748 258.243V244.819H530.768V258.109C530.768 261.934 532.626 263.914 535.69 263.914C538.754 263.914 540.612 262.001 540.612 258.276V244.819H545.632V258.075Z" fill="#2798F5"/>
+<path d="M571.117 268.311H565.25L560.36 260.793H556.416V268.311H551.396V244.819H561.827C567.206 244.819 570.433 247.739 570.433 252.571V252.639C570.433 256.431 568.444 258.813 565.543 259.921L571.117 268.311ZM565.348 252.907V252.84C565.348 250.625 563.848 249.484 561.403 249.484H556.416V256.229H561.501C563.946 256.229 565.348 254.887 565.348 252.907Z" fill="#2798F5"/>
+<path d="M592.978 268.311H575.604V244.819H592.815V249.417H580.591V254.182H591.348V258.78H580.591V263.713H592.978V268.311Z" fill="#2798F5"/>
+<path d="M617.814 268.311H611.946L607.057 260.793H603.113V268.311H598.093V244.819H608.524C613.902 244.819 617.129 247.739 617.129 252.571V252.639C617.129 256.431 615.141 258.813 612.24 259.921L617.814 268.311ZM612.044 252.907V252.84C612.044 250.625 610.545 249.484 608.1 249.484H603.113V256.229H608.198C610.643 256.229 612.044 254.887 612.044 252.907Z" fill="#2798F5"/>
+<path d="M193.009 138.93C191.231 137.158 189.058 136.272 186.545 136.272H127.908V66.2501C127.908 63.7107 127.019 61.528 125.252 59.7774C123.474 58.0053 121.301 57.1192 118.788 57.1192H105.586C103.073 57.1192 100.9 58.0161 99.0999 59.7666C97.3001 61.5172 96.4001 63.6999 96.4001 66.2501V151.864C96.4001 154.317 97.3549 156.489 99.1548 158.164C100.944 159.828 103.106 160.66 105.586 160.66H186.545C189.058 160.66 191.22 159.785 192.998 158.045C194.765 156.316 195.665 154.188 195.665 151.724V145.262C195.665 142.809 194.776 140.68 193.009 138.919V138.93Z" fill="#2798F5"/>
+<path d="M499.726 59.8855C498.134 58.0701 496.005 57.1192 493.591 57.1192H456.234C429.127 57.1624 412.829 66.812 407.814 85.7761L390.419 151.248L390.397 151.324C390.222 152.037 390.123 152.707 390.068 153.312V153.528C390.068 155.138 390.573 156.597 391.528 157.818C392.494 159.126 394.348 160.671 397.63 160.671H411.359C413.707 160.671 415.946 159.893 417.998 158.369C420.084 156.824 421.455 154.803 422.048 152.415L426.24 136.877H470.94V151.745C470.94 154.306 471.796 156.446 473.508 158.132C475.209 159.817 477.371 160.671 479.939 160.671H492.965C495.413 160.671 497.553 159.828 499.309 158.175C501.087 156.511 502.03 154.328 502.03 151.875V65.9691C502.03 63.6783 501.251 61.6252 499.715 59.8747L499.726 59.8855ZM437.917 93.5347C438.927 89.8067 440.825 86.9324 443.69 84.7496C446.565 82.5668 449.847 81.497 453.742 81.497H470.94V112.466H432.803L437.906 93.5347H437.917Z" fill="#2798F5"/>
+<path d="M606.135 105.054C611.304 99.9967 613.916 94.0319 613.916 87.2783C613.916 80.5247 611.852 74.3546 607.792 69.5676C603.808 64.8887 598.902 61.5714 593.218 59.702C587.719 57.8974 581.563 56.9789 574.912 56.9789H517.877C515.364 56.9789 513.191 57.8758 511.391 59.6263C509.592 61.3877 508.692 63.5272 508.692 65.9801V151.692C508.692 154.155 509.603 156.295 511.402 158.024C513.191 159.753 515.364 160.628 517.866 160.628H578.193C589.124 160.628 598.507 157.84 606.102 152.362C613.938 146.71 617.899 138.638 617.899 128.416C617.943 118.107 613.981 110.262 606.113 105.032L606.135 105.054ZM540.167 94.864V80.5247H575.186C577.458 80.5247 579.203 81.1298 580.509 82.3833C581.793 83.626 582.419 85.3765 582.419 87.7322C582.419 90.0878 581.804 91.8168 580.52 93.0378C579.225 94.2697 577.469 94.8748 575.186 94.8748H540.167V94.864ZM586.424 127.768C586.424 130.847 585.7 133.149 584.207 134.813C582.803 136.38 580.696 137.136 577.776 137.136H540.156V118.388H577.776C580.652 118.388 582.748 119.155 584.175 120.733C585.678 122.397 586.413 124.699 586.413 127.768H586.424Z" fill="#2798F5"/>
+<path d="M571.301 188.755C569.545 188.755 568.327 189.739 568.327 191.306C568.327 192.872 569.523 193.888 571.356 193.888C573.189 193.888 574.407 192.808 574.407 191.306C574.407 189.804 573.255 188.755 571.301 188.755Z" fill="#2798F5"/>
+<path d="M588.444 192.97C590.112 192.97 591.188 192.159 591.188 190.863C591.188 189.566 590.09 188.701 588.444 188.701C586.798 188.701 585.755 189.512 585.755 190.863C585.755 192.213 586.798 192.97 588.444 192.97Z" fill="#2798F5"/>
+<path d="M571.39 188.755C569.667 188.755 568.471 189.739 568.471 191.306C568.471 192.872 569.645 193.888 571.434 193.888C573.223 193.888 574.43 192.808 574.43 191.306C574.43 189.804 573.31 188.755 571.39 188.755Z" fill="#2798F5"/>
+<path d="M605.443 172.287V177.409H352.052V112.78H379.971V117.859H392.658V71.5235H379.971V76.6022L352.041 76.5482V40.5541H410.503V45.6328H423.661V0H410.503V5.08953H308.977V40.5541H313.894V177.409H255.443V171.909H247.465C245.039 163.113 248.782 156.889 249.726 154.652L249.846 154.425C272.048 151.205 289.19 131.582 289.19 107.917C289.19 85.4738 273.639 66.0882 252.206 61.8199L251.372 61.647L250.757 61.5498C250.516 61.5065 250.274 61.4849 250.044 61.4417V46.0543H258.044V40.5433H285.305V45.6112H297.344V0H285.305V5.08953H12.478V0H0V43.9687H12.478V38.9008H14.9693V177.366H12.2805V172.298H0V217.11H12.2805V212.042H605.443V217.11H617.91V172.298H605.443V172.287ZM233.582 153.799L233.461 154.047C233.132 154.782 230.345 159.094 230.619 164.864C230.685 166.279 231.255 171.92 231.255 171.92H223.211V177.42H53.0619V161.125C53.6765 155.063 53.2375 121.835 53.0948 112.305H77.151V116.562H90.7924V72.3447H77.8753V76.8399H53.0619V40.5541H226.405V46.0651H234.405V61.8739C213.477 66.1854 197.662 85.1928 197.662 107.928C197.662 130.664 213.093 149.195 233.637 153.81H233.582V153.799ZM227.842 146.548C225.626 146.051 217.395 141.405 210.854 132.414C205.487 125.023 200.022 112.791 204.511 96.4308C211.37 71.3938 234.515 66.6285 246.126 65.8505C244.008 68.1089 224.276 87.0946 242.021 104.719C275.505 136.585 244.908 152.394 227.842 146.548ZM476.394 203.559C473.628 203.559 470.83 202.749 469.282 201.571L470.654 198.578C472.125 199.637 474.319 200.372 476.416 200.372C478.808 200.372 479.785 199.583 479.785 198.535C479.785 195.315 469.633 197.53 469.633 191.144C469.633 188.226 472.026 185.795 476.986 185.795C479.181 185.795 481.42 186.313 483.044 187.318L481.793 190.344C480.169 189.436 478.501 188.993 476.953 188.993C474.561 188.993 473.639 189.879 473.639 190.96C473.639 194.126 483.79 191.943 483.79 198.254C483.79 201.128 481.376 203.581 476.383 203.581L476.394 203.559ZM490.606 203.268H486.567V186.076H490.606V203.268ZM510.755 203.268H507.441L498.738 192.829V203.268H494.743V186.076H498.079L506.76 196.514V186.076H510.755V203.268ZM523.474 200.177C525.219 200.177 526.69 199.486 527.864 198.135L530.454 200.491C528.808 202.479 526.295 203.559 523.244 203.559C517.834 203.559 513.795 199.853 513.795 194.666C513.795 189.479 517.833 185.773 523.266 185.773C526.284 185.773 528.797 186.854 530.443 188.82L527.853 191.176C526.679 189.847 525.208 189.166 523.464 189.166C520.193 189.166 517.877 191.424 517.877 194.666C517.877 197.908 520.193 200.166 523.464 200.166L523.474 200.177ZM546.686 203.268H533.165V186.076H546.356V189.263H537.182V192.991H545.281V196.082H537.182V200.058H546.686V203.246V203.268ZM561.699 203.268H557.66V189.274H554.17V186.086H561.699V203.278V203.268ZM570.05 203.559C568.207 203.559 566.44 203.138 565.211 202.382L566.703 199.464C567.647 200.102 568.777 200.328 569.974 200.328C572.871 200.328 574.758 198.632 574.89 195.315C573.87 196.32 572.377 196.86 570.555 196.86C567.186 196.86 564.541 194.753 564.541 191.511C564.541 187.999 567.46 185.795 571.148 185.795C575.988 185.795 578.951 188.766 578.951 194.31C578.951 200.253 575.329 203.57 570.05 203.57V203.559ZM588.455 203.559C584.043 203.559 581.124 201.517 581.124 198.275C581.124 196.438 582.1 195.055 583.769 194.223C582.474 193.434 581.749 192.235 581.749 190.69C581.749 187.664 584.493 185.784 588.455 185.784C592.417 185.784 595.215 187.675 595.215 190.69C595.215 192.235 594.469 193.434 593.174 194.223C594.864 195.055 595.841 196.438 595.841 198.275C595.841 201.517 592.899 203.559 588.455 203.559ZM604.642 203.268H600.604V189.274H597.114V186.086H604.642V203.278V203.268Z" fill="#2798F5"/>
+<path d="M588.444 195.703C586.446 195.703 585.206 196.633 585.206 198.156C585.206 199.68 586.457 200.631 588.444 200.631C590.43 200.631 591.736 199.669 591.736 198.156C591.736 196.643 590.463 195.703 588.444 195.703Z" fill="#2798F5"/>
+</svg>
+  </header>
+  <main id="app"><p>Chargement…</p></main>
+</div>
+
+<script src="config.js"></script>
+<script>
+/* La configuration se trouve dans config.js (adresse du service Google, année). */
+const CONFIG = Object.assign({
+  API_URL: "https://script.google.com/macros/s/VOTRE_ID_DE_DEPLOIEMENT/exec",
+  ANNEE_DEFAUT: "2026",
+  POSTES: ["Assembleur pompe", "Assembleur système", "Soudeur", "Journalier", "Peintre", "M.O.I."]
+}, window.FLOFAB_CONFIG || {});
+
+const SECTIONS=[
+ {t:"Performance",items:[
+  ["Temps d'exécution des tâches","Selon le temps alloué : 1 = 25 % de plus que le temps alloué, 5 = 25 % en bas du temps alloué."],
+  ["Qualité et précision du travail","Pas d'erreurs et n'occasionne pas de reprises (redo); travail précis et constant, inspection finale complète."],
+  ["Bon de travail","Bon de travail propre, bien rempli, aucun item manquant."],
+  ["Suivi des procédures","Connaît et comprend les procédures, les règles et les façons de faire de l'entreprise."],
+  ["Recherche l'information","Recherche de l'aide rapidement si nécessaire afin d'être efficace et de sauver du temps."],
+  ["Retard et ponctualité","Respect des horaires : matin, pause, dîner, soir."],
+  ["Jours d'absence au travail","S'absente occasionnellement pour des motifs raisonnables. Conserve une bonne moyenne d'heures travaillées annuellement."],
+  ["Disponibilité","Est disponible pour travailler les soirs, les fins de semaine ou en temps supplémentaire selon les besoins de la production."]
+ ]},
+ {t:"Savoir-faire",items:[
+  ["Autonomie et compréhension rapide","Exécute ses tâches sans supervision, a la capacité de prendre des initiatives et va au-devant des problèmes. Lorsqu'une question est posée et répondue, elle ne l'est pas plusieurs fois."],
+  ["Débrouillardise","Trouve des solutions aux problèmes avant d'abandonner ou de demander de l'aide (système D)."],
+  ["Organisation et planification","A une vue d'ensemble du travail à exécuter, priorise et organise ses tâches de façon efficace."],
+  ["Polyvalence","Possède toutes les habiletés pour accomplir toutes les tâches de son département, et plus."],
+  ["Ordre et propreté","Replace les outils aux bons endroits, maintient son environnement de travail propre, en ordre et efficace. Son ouvrage est propre une fois terminé."]
+ ]},
+ {t:"Participation au succès de l'entreprise",items:[
+  ["Partage des connaissances et entraide","Partage son savoir-faire et aide ses collègues et ses supérieurs."],
+  ["Idées et amélioration","Apporte des idées d'amélioration et des solutions afin d'améliorer la condition et l'efficacité du travail."]
+ ]},
+ {t:"Travail d'équipe et participation au succès de l'entreprise",items:[
+  ["Santé et sécurité","Est proactif vis-à-vis la sécurité des processus, des procédés et de ses collègues. Prend les moyens pour éviter ses blessures et celles de ses collègues."],
+  ["Leadership","Est considéré comme une personne-ressource par ses collègues et ses supérieurs."],
+  ["Attitude et engagement","Attitude positive et constructive, respect, langage approprié, tenue vestimentaire; participe activement aux rencontres et à l'amélioration."]
+ ]}
+];
+const IDS=[];SECTIONS.forEach(s=>s.items.forEach(()=>IDS.push("c"+(IDS.length+1))));
+
+const P=new URLSearchParams(location.search);
+const EID=P.get("id"),TOK=P.get("t"),ADM=P.get("a");
+const MODE=(EID&&TOK)?"sup":"emp";
+const ME=MODE; // rôle qui cote sur cette page
+const LS_KEY=MODE==="emp"?"flofab-eval-emp-v2":"flofab-eval-sup-v2-"+EID;
+const app=document.getElementById("app");
+let state={r:{},t:{}};
+let EVAL=null; // données de l'employé (mode évaluateur)
+let pad=null;
+
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");};
+function loadDraft(){try{const s=localStorage.getItem(LS_KEY);if(s)state=Object.assign({r:{},t:{}},JSON.parse(s));}catch(e){}}
+function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
+function clearDraft(){try{localStorage.removeItem(LS_KEY);}catch(e){}}
+const apiReady=()=>!/VOTRE_ID/.test(CONFIG.API_URL);
+
+async function apiGet(params){
+  const r=await fetch(CONFIG.API_URL+"?"+new URLSearchParams(params));
+  return r.json();
+}
+async function apiPost(body){
+  const r=await fetch(CONFIG.API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body)});
+  return r.json();
+}
+
+/* ---------- Construction de la page ---------- */
+function legendHtml(){
+  return `<div class="legend" aria-label="Échelle d'évaluation">
+   <div><b>1</b>Ne répond pas aux attentes</div><div><b>2</b>Répond à certaines attentes, besoin d'amélioration</div>
+   <div><b>3</b>Répond aux attentes</div><div><b>4</b>Surpasse parfois les attentes</div><div><b>5</b>Surpasse de loin les attentes</div></div>`;
+}
+function introHtml(){
+  if(MODE==="sup") return `<section class="sheet intro"><p>L'employé a complété son autoévaluation. Ses cotes sont affichées en bleu à titre de référence. Attribuez votre propre cote pour chaque critère, ajoutez vos commentaires, puis signez. Le rapport final combiné sera envoyé automatiquement par courriel à vous et aux administrateurs.</p></section>`;
+  return `<section class="sheet intro">
+    <p>Vous êtes invité à procéder à votre autoévaluation à l'aide de la grille ci-dessous. Que pensez-vous de vous-même? De vos forces et de vos faiblesses? Sont-elles les mêmes que l'année dernière? Avez-vous démontré des efforts? Du progrès?</p>
+    <p>Votre évaluateur procédera également à votre évaluation avec la même grille, puis vous comparerez ensemble vos appréciations lors de la rencontre.</p>
+    <p><strong>Évaluez soigneusement chacune des qualités et compétences séparément.</strong></p>
+    <ol><li>L'objectif est de faire ressortir vos points forts et de discuter de vos points à améliorer.</li>
+    <li>Soyez objectif : évitez de tout évaluer comme « moyen », montrez-vous plus critique.</li>
+    <li>Choisissez la cote de 1 à 5 qui vous décrit le mieux.</li></ol></section>`;
+}
+function identHtml(){
+  if(MODE==="sup"){
+    const i=EVAL.identite;
+    return `<section class="sheet"><div class="ident">
+     <div class="f"><label class="f">Employé</label><span class="ro">${esc(i.nom)}</span></div>
+     <div class="f"><label class="f">Poste</label><span class="ro">${esc(i.poste)}</span></div>
+     <div class="f"><label class="f">Année évaluée</label><span class="ro">${esc(i.annee)}</span></div>
+     <div class="f"><label class="f">Évaluateur</label><span class="ro">${esc(i.evaluateur)}</span></div></div></section>`;
+  }
+  return `<section class="sheet"><div class="ident">
+    <label class="f">Nom complet *<input type="text" data-k="nom" autocomplete="name" required></label>
+    <label class="f">Poste *<select data-k="poste" required><option value="">Choisir…</option>${CONFIG.POSTES.map(p=>`<option>${esc(p)}</option>`).join("")}</select></label>
+    <label class="f">Année évaluée<input type="text" data-k="annee" value="${CONFIG.ANNEE_DEFAUT}"></label>
+  </div></section>`;
+}
+function seg(who,id,title,val,disabled){
+  const lbl=who==="emp"?(MODE==="emp"?"Votre cote":"Employé"):"Évaluateur";
+  return `<div class="rate ${who}"><span class="who">${lbl}</span><div class="seg" role="group" aria-label="${esc(title)} – ${lbl}">${[1,2,3,4,5].map(v=>`<button type="button" data-who="${who}" data-v="${v}" aria-pressed="${val===v}" ${disabled?"disabled":""}>${v}</button>`).join("")}</div></div>`;
+}
+function gridHtml(){
+  let h="",n=0;
+  SECTIONS.forEach(s=>{
+    h+=`<div class="section-h"><h2>${esc(s.t)}</h2><span>Critères ${n+1} à ${n+s.items.length}</span></div>`;
+    s.items.forEach(([title,desc])=>{
+      n++;const id="c"+n;
+      let rows,extra="";
+      if(MODE==="emp"){
+        rows=seg("emp",id,title,null,false);
+        extra=`<details><summary>Commentaires, points à améliorer, objectifs</summary><textarea data-k="com-${id}" aria-label="Commentaires – ${esc(title)}"></textarea></details>`;
+      }else{
+        const ev=EVAL.notes[id],ec=EVAL.commentaires[id];
+        rows=seg("emp",id,title,ev,true)+seg("sup",id,title,null,false);
+        if(ec) extra+=`<div class="ecom"><b>Commentaire de l'employé</b>${esc(ec)}</div>`;
+        extra+=`<div class="gap" id="gap-${id}"></div><details><summary>Commentaires de l'évaluateur, points à améliorer, objectifs</summary><textarea data-k="com-${id}" aria-label="Commentaires de l'évaluateur – ${esc(title)}"></textarea></details>`;
+      }
+      h+=`<article class="item" data-id="${id}"><div class="num">${n}</div><div class="body"><h3>${esc(title)}</h3><p class="desc">${esc(desc)}</p>${rows}${extra}</div></article>`;
+    });
+  });
+  return `<div id="grid">${h}</div>`;
+}
+function openHtml(){
+  if(MODE==="sup"){
+    const r=EVAL.reponses||{};
+    return `<section class="sheet open">
+      <h3>Qu'est-ce que j'ai accompli et amélioré durant la dernière année? <small>(employé)</small></h3><div class="answer">${esc(r.accompli)||"—"}</div>
+      <h3>Qu'est-ce que je veux accomplir et améliorer dans la prochaine année? <small>(employé)</small></h3><div class="answer">${esc(r.prochaine)||"—"}</div>
+      <h3>Autres commentaires de l'employé</h3><div class="answer">${esc(r.autres)||"—"}</div>
+      <h3>Commentaires de l'évaluateur et objectifs convenus pour la prochaine année</h3><textarea data-k="commentaires"></textarea></section>`;
+  }
+  return `<section class="sheet open">
+    <h3>Qu'est-ce que j'ai accompli et amélioré durant la dernière année?</h3><textarea data-k="accompli"></textarea>
+    <h3>Qu'est-ce que je veux accomplir et améliorer dans la prochaine année?</h3><textarea data-k="prochaine"></textarea>
+    <h3>Autres commentaires, objectifs, etc.</h3><textarea data-k="autres"></textarea></section>`;
+}
+function signHtml(){
+  let prev="";
+  if(MODE==="sup"){
+    prev=`<div class="signed"><img src="${esc(EVAL.signature)}" alt="Signature de l'employé">
+      <strong>Signé par l'employé : ${esc(EVAL.identite.nom)}</strong><span>Date : ${esc(EVAL.date_signature)}</span><span style="color:var(--muted);font-size:.85rem">Horodatage : ${esc(EVAL.horodatage)}</span></div>`;
+  }
+  const who=MODE==="emp"?"de l'employé":"de l'évaluateur";
+  return `<section class="sheet sigwrap">${prev}
+    <h3>Signature ${who}</h3>
+    <div class="pad" id="pad"><canvas id="sig" aria-label="Zone de signature"></canvas><span class="hint" id="hint">Signez ici avec le doigt, le stylet ou la souris</span></div>
+    <div class="sigrow">
+      <button type="button" class="btn ghost" id="clearSig">Effacer la signature</button>
+      <label class="f">Date *<input type="date" id="sigDate" value="${today()}"></label>
+    </div>
+    <label class="attest"><input type="checkbox" id="attest"><span>Je confirme que les renseignements fournis sont exacts et j'accepte que cette signature électronique ait la même valeur que ma signature manuscrite.</span></label>
+  </section>`;
+}
+function build(){
+  app.innerHTML=(apiReady()?"":`<div class="banner">Configuration incomplète : l'adresse du service Google Apps Script n'est pas encore inscrite dans CONFIG.API_URL. Les envois ne fonctionneront pas.</div>`)
+   +identHtml()+introHtml()+legendHtml()+gridHtml()
+   +`<div class="section-h"><h2>Bilan des cotes</h2><span>Calculé automatiquement</span></div><section class="sheet summary" id="summary"></section>`
+   +`<div class="section-h"><h2>Réflexion et objectifs</h2></div>`+openHtml()
+   +`<div class="section-h"><h2>Signature</h2></div>`+signHtml()
+   +`<div class="actions"><button class="btn" type="button" id="send">${MODE==="emp"?"Signer et envoyer mon autoévaluation":"Signer et envoyer le rapport final"}</button><span class="status" id="status" aria-live="polite"></span></div>`;
+  bind();paint();
+  pad=new SigPad(document.getElementById("sig"),document.getElementById("hint"));
+  document.getElementById("clearSig").onclick=()=>pad.clear();
+  document.getElementById("send").onclick=submit;
+}
+
+/* ---------- Interactions ---------- */
+function bind(){
+  document.getElementById("grid").addEventListener("click",e=>{
+    const b=e.target.closest(".seg button");if(!b||b.disabled)return;
+    const id=b.closest(".item").dataset.id,v=+b.dataset.v;
+    state.r[id]=state.r[id]===v?null:v;
+    b.closest(".item").classList.remove("missing");
+    save();paint();
+  });
+  document.querySelectorAll("[data-k]").forEach(inp=>{
+    const k=inp.dataset.k;
+    if(state.t[k]!=null&&inp.tagName!=="SELECT")inp.value=state.t[k];
+    inp.addEventListener("input",()=>{state.t[k]=inp.value;save();if(k==="annee")document.getElementById("yr").textContent=inp.value;});
+    inp.addEventListener("change",()=>{state.t[k]=inp.value;save();});
+  });
+  const p=document.querySelector('select[data-k="poste"]');if(p&&state.t.poste)p.value=state.t.poste;
+  document.querySelectorAll("details").forEach(d=>{const t=d.querySelector("textarea");if(t&&t.value)d.open=true;});
+}
+const avg=a=>{a=a.filter(x=>x);return a.length?a.reduce((p,c)=>p+c,0)/a.length:null};
+const f=x=>x==null?"—":x.toFixed(1).replace(".",",");
+function empVal(id){return MODE==="emp"?state.r[id]:EVAL.notes[id];}
+function supVal(id){return MODE==="sup"?state.r[id]:null;}
+function paint(){
+  document.querySelectorAll(".item").forEach(el=>{
+    const id=el.dataset.id;
+    el.querySelectorAll(`.rate.${ME} .seg button`).forEach(b=>b.setAttribute("aria-pressed",state.r[id]===+b.dataset.v));
+    if(MODE==="sup"){
+      const e=empVal(id),s=supVal(id),g=document.getElementById("gap-"+id);
+      if(e&&s&&Math.abs(e-s)>=2){g.className="gap show";g.textContent=`Écart de ${Math.abs(e-s)} points entre les deux cotes — à discuter lors de la rencontre.`;}
+      else{g.className="gap";g.textContent="";}
+    }
+  });
+  let rows="",allE=[],allS=[],k=0,watch=[];
+  SECTIONS.forEach(s=>{
+    const e=[],su=[];
+    s.items.forEach(([title])=>{k++;const id="c"+k;e.push(empVal(id));su.push(supVal(id));
+      if(MODE==="sup"&&empVal(id)&&supVal(id)&&Math.abs(empVal(id)-supVal(id))>=2)watch.push(k+". "+title);});
+    allE.push(...e);allS.push(...su);
+    rows+=`<tr><td>${esc(s.t)}</td><td class="n">${f(avg(e))}</td>${MODE==="sup"?`<td class="n">${f(avg(su))}</td>`:""}</tr>`;
+  });
+  const tot=IDS.length,dE=allE.filter(x=>x).length,dS=allS.filter(x=>x).length;
+  document.getElementById("summary").innerHTML=
+   `<div class="bigs"><div><strong>${f(avg(allE))}</strong><span>Moyenne employé (${dE}/${tot})</span></div>${MODE==="sup"?`<div><strong>${f(avg(allS))}</strong><span>Moyenne évaluateur (${dS}/${tot})</span></div>`:""}</div>
+   <div class="tscroll"><table><thead><tr><th>Section</th><th class="n">Employé</th>${MODE==="sup"?'<th class="n">Évaluateur</th>':""}</tr></thead><tbody>${rows}
+   <tr class="total"><td>Global</td><td class="n">${f(avg(allE))}</td>${MODE==="sup"?`<td class="n">${f(avg(allS))}</td>`:""}</tr></tbody></table></div>
+   ${watch.length?`<p class="watch">Critères avec un écart de 2 points ou plus : ${esc(watch.join(", "))}</p>`:""}`;
+}
+
+/* ---------- Signature ---------- */
+function SigPad(canvas,hint){
+  const ctx=canvas.getContext("2d");let drawing=false,empty=true,last=null;
+  const size=()=>{if(!empty)return;const r=canvas.getBoundingClientRect(),d=window.devicePixelRatio||1;canvas.width=r.width*d;canvas.height=r.height*d;ctx.scale(d,d);ctx.lineWidth=2.4;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#0B2545";};
+  size();window.addEventListener("resize",size);
+  const pos=e=>{const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};};
+  canvas.addEventListener("pointerdown",e=>{e.preventDefault();try{canvas.setPointerCapture(e.pointerId);}catch(_){}drawing=true;last=pos(e);ctx.beginPath();ctx.arc(last.x,last.y,1.1,0,Math.PI*2);ctx.fillStyle="#0B2545";ctx.fill();if(empty){empty=false;hint.style.display="none";}});
+  canvas.addEventListener("pointermove",e=>{if(!drawing)return;const p=pos(e);ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();last=p;});
+  ["pointerup","pointercancel","pointerleave"].forEach(ev=>canvas.addEventListener(ev,()=>drawing=false));
+  this.clear=()=>{ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,canvas.width,canvas.height);ctx.restore();empty=true;hint.style.display="";size();};
+  this.isEmpty=()=>empty;
+  this.toData=()=>{const c=document.createElement("canvas"),w=600,h=Math.round(600*canvas.height/canvas.width);c.width=w;c.height=h;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,w,h);x.drawImage(canvas,0,0,w,h);return c.toDataURL("image/png");};
+}
+
+/* ---------- Envoi ---------- */
+function setStatus(msg,cls){const s=document.getElementById("status");s.textContent=msg;s.className="status "+(cls||"");}
+function checkRatings(){
+  const miss=IDS.filter(id=>!state.r[id]);
+  document.querySelectorAll(".item").forEach(el=>el.classList.toggle("missing",miss.includes(el.dataset.id)));
+  if(miss.length){document.querySelector(`.item[data-id="${miss[0]}"]`).scrollIntoView({behavior:"smooth",block:"center"});}
+  return miss.length;
+}
+function collectComments(){const o={};IDS.forEach(id=>{const v=(state.t["com-"+id]||"").trim();if(v)o[id]=v;});return o;}
+async function submit(){
+  if(!apiReady()){setStatus("Envoi impossible : le service n'est pas configuré.","err");return;}
+  const missing=checkRatings();
+  if(missing){setStatus(`Il manque ${missing} cote${missing>1?"s":""} (encadrée${missing>1?"s":""} en rouge).`,"err");return;}
+  let body;
+  if(MODE==="emp"){
+    const t=state.t;
+    if(!t.nom||!t.poste){setStatus("Remplissez votre nom et votre poste en haut du formulaire.","err");window.scrollTo({top:0,behavior:"smooth"});return;}
+    body={action:"soumettreEmploye",
+      identite:{nom:t.nom.trim(),poste:t.poste,annee:(t.annee||CONFIG.ANNEE_DEFAUT).trim()},
+      notes:Object.fromEntries(IDS.map(id=>[id,state.r[id]])),commentaires:collectComments(),
+      reponses:{accompli:t.accompli||"",prochaine:t.prochaine||"",autres:t.autres||""}};
+  }else{
+    body={action:"soumettreEvaluateur",id:EID,jeton:TOK,
+      notes:Object.fromEntries(IDS.map(id=>[id,state.r[id]])),commentaires:collectComments(),
+      reponses:{commentaires:state.t.commentaires||""}};
+  }
+  const date=document.getElementById("sigDate").value;
+  if(pad.isEmpty()){setStatus("Ajoutez votre signature dans la zone prévue.","err");document.getElementById("pad").scrollIntoView({behavior:"smooth",block:"center"});return;}
+  if(!date){setStatus("Indiquez la date de signature.","err");return;}
+  if(!document.getElementById("attest").checked){setStatus("Cochez la case de confirmation sous la signature.","err");return;}
+  body.signature={image:pad.toData(),date};
+  const btn=document.getElementById("send");btn.disabled=true;setStatus("Envoi en cours…");
+  try{
+    const res=await apiPost(body);
+    if(!res.ok)throw new Error(res.erreur||"Erreur inconnue.");
+    clearDraft();
+    app.innerHTML=MODE==="emp"
+     ?`<section class="sheet done"><h2>Autoévaluation envoyée</h2><p>Merci. Votre autoévaluation a été envoyée. Les administrateurs ont été avisés et désigneront l'évaluateur, qui la comparera avec vous lors de la rencontre.</p></section>`
+     :`<section class="sheet done"><h2>Rapport final envoyé</h2><p>Le rapport combiné (autoévaluation et évaluation de l'évaluateur) a été envoyé en PDF par courriel à vous et aux administrateurs.</p></section>`;
+    window.scrollTo({top:0});
+  }catch(err){
+    setStatus("L'envoi a échoué : "+err.message,"err");btn.disabled=false;
+  }
+}
+
+/* ---------- Démarrage ---------- */
+/* ---------- Page administrateur : désigner l'évaluateur ---------- */
+async function initAdmin(){
+  document.getElementById("roleTag").textContent="Désignation de l'évaluateur";
+  if(!apiReady()){app.innerHTML=`<div class="banner">Le service n'est pas configuré (CONFIG.API_URL).</div>`;return;}
+  try{
+    const res=await apiGet({action:"obtenirAdmin",id:EID,a:ADM});
+    if(!res.ok)throw new Error(res.erreur);
+    if(res.complete){app.innerHTML=`<section class="sheet done"><h2>Évaluation déjà complétée</h2><p>Le rapport final a déjà été envoyé. Il n'y a plus rien à assigner.</p></section>`;return;}
+    const e=res.evaluation;
+    const lst=await apiGet({action:"evaluateurs"});
+    document.getElementById("yr").textContent=e.identite.annee;
+    app.innerHTML=`<section class="sheet"><div class="ident">
+      <div class="f"><label class="f">Employé</label><span class="ro">${esc(e.identite.nom)}</span></div>
+      <div class="f"><label class="f">Poste</label><span class="ro">${esc(e.identite.poste)}</span></div>
+      <div class="f"><label class="f">Année évaluée</label><span class="ro">${esc(e.identite.annee)}</span></div>
+      <div class="f"><label class="f">Autoévaluation signée le</label><span class="ro">${esc(e.date_signature)}</span></div></div></section>
+      <section class="sheet intro"><h3 style="font-size:1.4rem;margin-bottom:8px">Désigner l'évaluateur</h3>
+      <p>Choisissez la personne qui évaluera cet employé. Elle recevra immédiatement son lien personnel pour compléter et signer l'évaluation.</p>
+      ${e.evaluateur?`<p><strong>Évaluateur actuel : ${esc(e.evaluateur)}.</strong> Si vous en désignez un autre, le lien précédent cessera de fonctionner.</p>`:""}
+      <label class="f" style="max-width:420px">Évaluateur *<select id="evSel"><option value="">Choisir…</option>${(lst.evaluateurs||[]).map(n=>`<option${n===e.evaluateur?" selected":""}>${esc(n)}</option>`).join("")}</select></label>
+      <div class="actions"><button class="btn" type="button" id="assign">${e.evaluateur?"Changer l'évaluateur et renvoyer le lien":"Désigner et envoyer le lien"}</button><span class="status" id="status" aria-live="polite"></span></div></section>`;
+    document.getElementById("assign").onclick=async()=>{
+      const v=document.getElementById("evSel").value;
+      if(!v){setStatus("Choisissez un évaluateur.","err");return;}
+      const btn=document.getElementById("assign");btn.disabled=true;setStatus("Envoi en cours…");
+      try{
+        const r2=await apiPost({action:"assigner",id:EID,jeton_admin:ADM,evaluateur:v});
+        if(!r2.ok)throw new Error(r2.erreur||"Erreur inconnue.");
+        app.innerHTML=`<section class="sheet done"><h2>Évaluateur désigné</h2><p>Le lien d'évaluation a été envoyé à ${esc(v)} par courriel. Les administrateurs ont été avisés par courriel. Vous pouvez rouvrir ce lien pour changer d'évaluateur tant que l'évaluation n'est pas signée.</p></section>`;
+        window.scrollTo({top:0});
+      }catch(err){setStatus("L'envoi a échoué : "+err.message,"err");btn.disabled=false;}
+    };
+  }catch(err){app.innerHTML=`<div class="banner">Impossible de charger la page : ${esc(err.message)}</div>`;}
+}
+
+(async function init(){
+  if(EID&&ADM&&!TOK){await initAdmin();return;}
+  loadDraft();
+  if(MODE==="emp"){
+    document.getElementById("yr").textContent=state.t.annee||CONFIG.ANNEE_DEFAUT;
+    build();
+    return;
+  }else{
+    document.getElementById("roleTag").textContent="Évaluation de l'évaluateur";
+    if(!apiReady()){app.innerHTML=`<div class="banner">Le service n'est pas configuré (CONFIG.API_URL).</div>`;return;}
+    try{
+      const res=await apiGet({action:"obtenir",id:EID,t:TOK});
+      if(!res.ok)throw new Error(res.erreur);
+      if(res.complete){app.innerHTML=`<section class="sheet done"><h2>Évaluation déjà complétée</h2><p>Le rapport final de cette évaluation a déjà été envoyé. Communiquez avec les ressources humaines pour toute modification.</p></section>`;return;}
+      EVAL=res.evaluation;
+      document.getElementById("yr").textContent=EVAL.identite.annee;
+      build();
+    }catch(err){app.innerHTML=`<div class="banner">Impossible de charger l'évaluation : ${esc(err.message)}</div>`;}
+  }
+})();
+</script>
+</body>
+</html>
