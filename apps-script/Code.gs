@@ -11,7 +11,7 @@
 const CONFIG = {
   // Clé du panneau « Gestion des destinataires » (8 caractères minimum, à garder secrète).
   // Ouvrir : URL_FORMULAIRE + '?admin=' + CLE_ADMIN. Le panneau reste refusé tant que la clé n'est pas changée.
-  CLE_ADMIN: '1980',
+  CLE_ADMIN: 'CHANGEZ-MOI',
 
   // Administrateurs : reçoivent un lien d'assignation dès qu'un employé envoie son autoévaluation
   // et désignent l'évaluateur (en le choisissant dans la liste EVALUATEURS ci-dessous). Ils reçoivent aussi une copie du rapport final en PDF.
@@ -31,7 +31,7 @@ const CONFIG = {
   COURRIEL_EN_PLUS: '',
 
   // Adresse de la page GitHub Pages (avec la barre oblique finale).
-  URL_FORMULAIRE: 'https://jeanto-developpement.github.io/Evaluation-annuelle-2026/',
+  URL_FORMULAIRE: 'https://VOTRE-COMPTE.github.io/evaluation-annuelle/',
 
   // Dossier Google Drive créé automatiquement pour les signatures et les PDF.
   NOM_DOSSIER: 'Évaluations annuelles – Flo-Fab',
