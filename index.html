@@ -88,6 +88,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-vis
 .open textarea{min-height:120px;margin-bottom:18px}
 .answer{white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px;margin-bottom:18px;min-height:44px}
 .sigwrap h3{font-size:1.25rem;margin-bottom:8px}
+.pad.invalid{outline:2px solid var(--alert);border-color:var(--alert)}
 .pad{position:relative;border:1.5px dashed var(--muted);border-radius:6px;background:#fff;height:170px;touch-action:none}
 .pad canvas{width:100%;height:100%;display:block;border-radius:6px;cursor:crosshair}
 .pad .hint{position:absolute;left:14px;bottom:10px;color:#8A96A0;font-size:.85rem;pointer-events:none}
@@ -97,6 +98,9 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-vis
 .attest input{margin-top:4px;width:18px;height:18px;flex-shrink:0}
 .signed{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--line)}
 .signed img{height:80px;background:#fff;border:1px solid var(--line);border-radius:4px;grid-row:span 3}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:max-content;max-width:min(560px,92vw);background:var(--alert);color:#fff;padding:12px 18px;border-radius:8px;font-weight:600;z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.35);display:none}
+.toast.show{display:block}
+.invalid{border-color:var(--alert)!important;outline:2px solid var(--alert)}
 .tog{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
 .tog:last-child{border-bottom:0}
 .tog .who2{display:flex;flex-direction:column}
@@ -140,6 +144,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-vis
 </style>
 </head>
 <body>
+<div class="toast" id="toast" role="alert"></div>
 <div class="wrap">
   <header class="top">
     <div>
@@ -189,11 +194,14 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-vis
 <script src="config.js"></script>
 <script>
 /* La configuration se trouve dans config.js (adresse du service Google, année). */
-const CONFIG = Object.assign({
+const DEFAUTS = {
   API_URL: "https://script.google.com/macros/s/VOTRE_ID_DE_DEPLOIEMENT/exec",
   ANNEE_DEFAUT: "2026",
   POSTES: ["Assembleur pompe", "Assembleur système", "Soudeur", "Journalier", "Peintre", "M.O.I."]
-}, window.FLOFAB_CONFIG || {});
+};
+const FC = window.FLOFAB_CONFIG || {};
+const CONFIG = Object.assign({}, DEFAUTS, FC);
+if (!FC.API_URL || /VOTRE_ID/.test(FC.API_URL)) CONFIG.API_URL = DEFAUTS.API_URL; // ne jamais remplacer une adresse valide par l'exemple
 
 const SECTIONS=[
  {t:"Performance",items:[
@@ -407,7 +415,7 @@ function SigPad(canvas,hint){
   const size=()=>{if(!empty)return;const r=canvas.getBoundingClientRect(),d=window.devicePixelRatio||1;canvas.width=r.width*d;canvas.height=r.height*d;ctx.scale(d,d);ctx.lineWidth=2.4;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#0B2545";};
   size();window.addEventListener("resize",size);
   const pos=e=>{const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};};
-  canvas.addEventListener("pointerdown",e=>{e.preventDefault();try{canvas.setPointerCapture(e.pointerId);}catch(_){}drawing=true;last=pos(e);ctx.beginPath();ctx.arc(last.x,last.y,1.1,0,Math.PI*2);ctx.fillStyle="#0B2545";ctx.fill();if(empty){empty=false;hint.style.display="none";}});
+  canvas.addEventListener("pointerdown",e=>{e.preventDefault();document.getElementById("pad").classList.remove("invalid");try{canvas.setPointerCapture(e.pointerId);}catch(_){}drawing=true;last=pos(e);ctx.beginPath();ctx.arc(last.x,last.y,1.1,0,Math.PI*2);ctx.fillStyle="#0B2545";ctx.fill();if(empty){empty=false;hint.style.display="none";}});
   canvas.addEventListener("pointermove",e=>{if(!drawing)return;const p=pos(e);ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();last=p;});
   ["pointerup","pointercancel","pointerleave"].forEach(ev=>canvas.addEventListener(ev,()=>drawing=false));
   this.clear=()=>{ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,canvas.width,canvas.height);ctx.restore();empty=true;hint.style.display="";size();};
@@ -416,7 +424,18 @@ function SigPad(canvas,hint){
 }
 
 /* ---------- Envoi ---------- */
-function setStatus(msg,cls){const s=document.getElementById("status");s.textContent=msg;s.className="status "+(cls||"");}
+let toastTimer=null;
+function setStatus(msg,cls){
+  const s=document.getElementById("status");if(s){s.textContent=msg;s.className="status "+(cls||"");}
+  const tt=document.getElementById("toast");
+  if(tt){clearTimeout(toastTimer);if(cls==="err"&&msg){tt.textContent=msg;tt.classList.add("show");toastTimer=setTimeout(()=>tt.classList.remove("show"),9000);}else tt.classList.remove("show");}
+}
+function flag(el,msg){
+  document.querySelectorAll(".invalid").forEach(x=>x.classList.remove("invalid"));
+  if(el){el.classList.add("invalid");el.scrollIntoView({behavior:"smooth",block:"center"});if(el.focus&&el.tagName!=="DIV")try{el.focus({preventScroll:true});}catch(_){}
+    el.addEventListener("input",()=>el.classList.remove("invalid"),{once:true});el.addEventListener("change",()=>el.classList.remove("invalid"),{once:true});}
+  setStatus(msg,"err");
+}
 function checkRatings(){
   const miss=IDS.filter(id=>!state.r[id]);
   document.querySelectorAll(".item").forEach(el=>el.classList.toggle("missing",miss.includes(el.dataset.id)));
@@ -425,13 +444,17 @@ function checkRatings(){
 }
 function collectComments(){const o={};IDS.forEach(id=>{const v=(state.t["com-"+id]||"").trim();if(v)o[id]=v;});return o;}
 async function submit(){
-  if(!apiReady()){setStatus("Envoi impossible : le service n'est pas configuré.","err");return;}
-  const missing=checkRatings();
-  if(missing){setStatus(`Il manque ${missing} cote${missing>1?"s":""} (encadrée${missing>1?"s":""} en rouge).`,"err");return;}
+  if(!apiReady()){setStatus("Envoi impossible : le service n'est pas configuré (adresse manquante dans config.js).","err");return;}
   let body;
   if(MODE==="emp"){
     const t=state.t;
-    if(!t.nom||!t.poste){setStatus("Remplissez votre nom et votre poste en haut du formulaire.","err");window.scrollTo({top:0,behavior:"smooth"});return;}
+    if(!(t.nom||"").trim()){flag(document.querySelector('[data-k="nom"]'),"Écrivez votre nom complet en haut du formulaire.");return;}
+    if(!t.poste){flag(document.querySelector('[data-k="poste"]'),"Choisissez votre poste en haut du formulaire.");return;}
+  }
+  const missing=checkRatings();
+  if(missing){setStatus(`Il manque ${missing} cote${missing>1?"s":""} (encadrée${missing>1?"s":""} en rouge).`,"err");return;}
+  if(MODE==="emp"){
+    const t=state.t;
     body={action:"soumettreEmploye",
       identite:{nom:t.nom.trim(),poste:t.poste,annee:(t.annee||CONFIG.ANNEE_DEFAUT).trim()},
       notes:Object.fromEntries(IDS.map(id=>[id,state.r[id]])),commentaires:collectComments(),
@@ -442,9 +465,9 @@ async function submit(){
       reponses:{commentaires:state.t.commentaires||""}};
   }
   const date=document.getElementById("sigDate").value;
-  if(pad.isEmpty()){setStatus("Ajoutez votre signature dans la zone prévue.","err");document.getElementById("pad").scrollIntoView({behavior:"smooth",block:"center"});return;}
-  if(!date){setStatus("Indiquez la date de signature.","err");return;}
-  if(!document.getElementById("attest").checked){setStatus("Cochez la case de confirmation sous la signature.","err");return;}
+  if(pad.isEmpty()){flag(document.getElementById("pad"),"Ajoutez votre signature dans la zone prévue (doigt, stylet ou souris).");return;}
+  if(!date){flag(document.getElementById("sigDate"),"Indiquez la date de signature.");return;}
+  if(!document.getElementById("attest").checked){flag(document.getElementById("attest"),"Cochez la case de confirmation sous la signature.");return;}
   body.signature={image:pad.toData(),date};
   const btn=document.getElementById("send");btn.disabled=true;setStatus("Envoi en cours…");
   try{
@@ -536,6 +559,10 @@ async function initAdmin(){
   if(MODE==="emp"){
     document.getElementById("yr").textContent=state.t.annee||CONFIG.ANNEE_DEFAUT;
     build();
+    if(apiReady()){
+      apiGet({action:"ping"}).then(r=>{if(!r||!r.ok)throw new Error(MSG_SERVICE);}).catch(err=>{
+        app.insertAdjacentHTML("afterbegin",`<div class="banner"><strong>Le service d'envoi ne répond pas.</strong> ${esc(err.message)}</div>`);});
+    }
     return;
   }else{
     document.getElementById("roleTag").textContent="Évaluation de l'évaluateur";

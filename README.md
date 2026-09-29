@@ -59,6 +59,12 @@ Aucune donnée n'est conservée sur GitHub. Les réponses, signatures et PDF res
 
 > Chaque modification de `Code.gs` demande une **nouvelle version** du déploiement, sinon l'ancienne version reste active.
 
+### 3 bis. Vérifier que tout est prêt (diagnostic)
+
+Dans Apps Script, choisissez la fonction `diagnostic` et cliquez sur **Exécuter**, puis ouvrez **Journal d'exécution**. Vous verrez `TOUT EST PRÊT.` ou la liste de ce qui reste à corriger (`feuille`, `drive`, `courriel`, `url_formulaire`).
+
+Vous pouvez aussi ouvrir dans un navigateur l'adresse `/exec` suivie de `?action=diagnostic` : la page affiche les mêmes vérifications (sans aucun courriel ni donnée).
+
 ### 4. Essai complet avant le lancement
 
 1. Ouvrez la page GitHub et remplissez une autoévaluation de test.
@@ -107,6 +113,9 @@ Un panneau permet aux administrateurs d'activer ou de désactiver, en un clic, l
 |---|---|
 | Bandeau « Configuration incomplète » | `API_URL` de `config.js` contient encore `VOTRE_ID_DE_DEPLOIEMENT`. |
 | « L'envoi a échoué » avec un message sur le service Google, ou « Unexpected token » / « jeton » | La page a reçu une page d'erreur au lieu de données : l'adresse `/exec` de `config.js` est fausse ou incomplète, le déploiement n'est pas en accès « Tout le monde », les autorisations n'ont pas été acceptées (lancer `installer`), ou la nouvelle version n'a pas été publiée. Faites le test ci-dessous. |
+| Rien ne se passe au clic sur « Signer et envoyer » | Un champ obligatoire manque : le formulaire l'encadre en rouge et affiche une bulle rouge en bas de l'écran (nom, poste, les 18 cotes, signature, date, case de confirmation). |
+| Bandeau rouge « Le service d'envoi ne répond pas » à l'ouverture de la page | Même cause que le message sur le service Google ci-dessous : reprenez le test `?action=ping` et le diagnostic. |
+| « Le courriel … n'a pas pu être envoyé » | Google a refusé l'envoi (adresse invalide dans `ADMINISTRATEURS` / `EVALUATEURS`, autorisation « envoi de courriels » non accordée, ou quota quotidien atteint). Rien n'est enregistré ni verrouillé : corrigez et réessayez. Lancez `diagnostic` pour voir le quota restant. |
 | « Failed to fetch » ou envoi qui échoue | Le déploiement n'est pas en accès « Tout le monde » (un administrateur Google Workspace peut le restreindre), ou l'adresse `/exec` est incomplète. |
 | Les liens des courriels ne fonctionnent pas | `URL_FORMULAIRE` est vide, incorrecte ou sans nouvelle version du déploiement. |
 | Une modification du script sans effet | Il faut publier une **nouvelle version** du déploiement. |
@@ -122,6 +131,13 @@ Ouvrez dans un navigateur l'adresse `/exec` suivie de `?action=ping`, par exempl
 
 - Vous voyez `{"ok":true,"message":"Le service fonctionne."}` : le service est bon, le problème vient de `config.js` (mauvaise adresse copiée).
 - Vous voyez une page Google (connexion, « Impossible d'ouvrir le fichier », erreur de script) : reprenez l'étape 1.6 (accès « Tout le monde », nouvelle version) et l'autorisation avec `installer`.
+
+### Ce que le système fait en cas d'échec
+
+- Si le courriel aux administrateurs échoue, l'autoévaluation n'est **pas** enregistrée : l'employé peut réessayer sans créer de doublon.
+- Si le courriel à l'évaluateur échoue, l'assignation est annulée : l'administrateur peut réessayer avec le même lien.
+- Si l'envoi du rapport final échoue, l'évaluation n'est **pas** verrouillée : l'évaluateur peut réessayer avec le même lien.
+- Si Google n'arrive pas à créer le PDF avec les images (signatures, logo), il produit un rapport sans images plutôt que d'échouer.
 
 ## Limites
 
