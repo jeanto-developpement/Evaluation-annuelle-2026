@@ -253,12 +253,20 @@ function clearDraft(){try{localStorage.removeItem(LS_KEY);}catch(e){}}
 const apiReady=()=>!/VOTRE_ID/.test(CONFIG.API_URL);
 
 const MSG_SERVICE="Le service Google ne répond pas correctement. Vérifiez dans config.js que l'adresse se termine bien par /exec et est complète, et que le déploiement Apps Script est en accès « Tout le monde » (nouvelle version publiée après chaque modification du script).";
+const MSG_KIND={
+  net:"Le navigateur n'a pas pu joindre le service Google. Causes probables : le déploiement Apps Script n'est pas en accès « Tout le monde » (l'accès limité à l'organisation ne fonctionne pas depuis GitHub), l'adresse /exec est fausse ou incomplète, ou un blocage réseau.",
+  html:"Google a répondu par une page (connexion demandée, adresse incorrecte ou erreur du script) au lieu de données. Vérifiez l'adresse /exec et l'accès « Tout le monde ».",
+  old:"Le service répond, mais c'est une ancienne version du script. Dans Apps Script : Déployer › Gérer les déploiements › crayon › Nouvelle version › Déployer."
+};
+function svcError(kind,extra){const e=new Error(MSG_KIND[kind]||MSG_SERVICE);e.kind=kind;e.extra=extra;return e;}
 async function apiCall(url,opts){
   let r,txt;
   try{r=await fetch(url,opts);txt=await r.text();}
-  catch(e){throw new Error("Impossible de joindre le service Google. "+MSG_SERVICE);}
-  try{return JSON.parse(txt);}
-  catch(e){throw new Error(MSG_SERVICE);}
+  catch(e){throw svcError("net");}
+  let j;
+  try{j=JSON.parse(txt);}
+  catch(e){throw svcError("html");}
+  return j;
 }
 const apiGet=params=>apiCall(CONFIG.API_URL+"?"+new URLSearchParams(params));
 const apiPost=body=>apiCall(CONFIG.API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body)});
@@ -593,8 +601,11 @@ async function initAdmin(){
     document.getElementById("yr").textContent=state.t.annee||CONFIG.ANNEE_DEFAUT;
     build();
     if(apiReady()){
-      apiGet({action:"ping"}).then(r=>{if(!r||!r.ok)throw new Error(MSG_SERVICE);}).catch(err=>{
-        app.insertAdjacentHTML("afterbegin",`<div class="banner"><strong>Le service d'envoi ne répond pas.</strong> ${esc(err.message)}</div>`);});
+      apiGet({action:"ping"}).then(r=>{
+        if(r&&r.ok)return;
+        throw (r&&/Action inconnue/i.test(r.erreur||""))?svcError("old"):new Error((r&&r.erreur)||MSG_SERVICE);
+      }).catch(err=>{
+        app.insertAdjacentHTML("afterbegin",`<div class="banner"><strong>Le service d'envoi ne répond pas.</strong> ${esc(err.message)} <a href="${esc(CONFIG.API_URL)}?action=ping" target="_blank" rel="noopener">Tester l'adresse du service</a> (doit afficher « Le service fonctionne. »)</div>`);});
     }
     return;
   }else{
