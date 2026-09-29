@@ -27,6 +27,10 @@ const CONFIG = {
     'Jean To': 'jeanto@flofab.com'
   },
 
+  // Facultatif : ID d'une feuille Google existante à utiliser comme registre (sinon créée automatiquement
+  // si le script n'est pas lié à une feuille).
+  CLASSEUR_ID: '',
+
   // Facultatif : autres destinataires du rapport final (RH, direction). Séparer par des virgules.
   COURRIEL_EN_PLUS: '',
 
@@ -66,8 +70,10 @@ const MAX_TEXTE = 5000;
 
 /* ---------- À exécuter une fois pour autoriser et créer la feuille ---------- */
 function installer() {
+  const ss = classeur_();
   feuille_();
   dossier_();
+  Logger.log('Registre des réponses : ' + ss.getUrl());
   Logger.log('Installation terminée. Déployez maintenant l’application Web.');
 }
 
@@ -475,11 +481,32 @@ function testerCourriel() {
 }
 
 /* ---------- Utilitaires ---------- */
+/**
+ * Retourne la feuille de calcul « registre ». Fonctionne que le script soit lié à une feuille
+ * (Extensions › Apps Script) ou autonome : dans ce dernier cas, une feuille est créée
+ * automatiquement dans le dossier Drive et son identifiant est mémorisé.
+ */
+function classeur_() {
+  let ss = null;
+  try { ss = SpreadsheetApp.getActiveSpreadsheet(); } catch (e) { ss = null; }
+  if (ss) return ss;
+  const props = PropertiesService.getScriptProperties();
+  const id = String(CONFIG.CLASSEUR_ID || '') || props.getProperty('CLASSEUR_ID');
+  if (id) return SpreadsheetApp.openById(id);
+  ss = SpreadsheetApp.create('Évaluations annuelles – registre');
+  props.setProperty('CLASSEUR_ID', ss.getId());
+  try { DriveApp.getFileById(ss.getId()).moveTo(dossier_()); } catch (e) { /* reste à la racine du Drive */ }
+  return ss;
+}
 function feuille_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = classeur_();
   let sh = ss.getSheetByName('Évaluations');
   if (!sh) {
     sh = ss.insertSheet('Évaluations');
+    try { // supprime la feuille vide par défaut d'un classeur fraîchement créé
+      const autres = ss.getSheets().filter(s => s.getName() !== 'Évaluations');
+      if (autres.length && autres.every(s => s.getLastRow() === 0)) autres.forEach(s => ss.deleteSheet(s));
+    } catch (e) { /* sans importance */ }
     sh.getRange(1, 1, sh.getMaxRows(), ENTETES.length).setNumberFormat('@'); // texte brut (évite la conversion des dates)
     sh.getRange(1, 1, 1, ENTETES.length).setValues([ENTETES]).setFontWeight('bold');
     sh.setFrozenRows(1);
