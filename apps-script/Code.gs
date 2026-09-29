@@ -31,7 +31,7 @@ const CONFIG = {
   COURRIEL_EN_PLUS: '',
 
   // Adresse de la page GitHub Pages (avec la barre oblique finale).
-  URL_FORMULAIRE: 'https://VOTRE-COMPTE.github.io/evaluation-annuelle/',
+  URL_FORMULAIRE: 'https://jeanto-developpement.github.io/Evaluation-annuelle-2026/',
 
   // Dossier Google Drive créé automatiquement pour les signatures et les PDF.
   NOM_DOSSIER: 'Évaluations annuelles – Flo-Fab',
