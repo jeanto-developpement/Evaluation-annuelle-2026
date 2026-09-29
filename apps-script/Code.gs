@@ -11,7 +11,7 @@
 const CONFIG = {
   // Administrateurs : reçoivent un lien d'assignation dès qu'un employé envoie son autoévaluation
   // et désignent l'évaluateur (en le choisissant dans la liste EVALUATEURS ci-dessous). Ils reçoivent aussi une copie du rapport final en PDF.
-  ADMINISTRATEURS: ['michaeldugal@flofab.com', 'jeanto@flofab.com', 'karynalapierre@flofab.com'],
+  ADMINISTRATEURS: ['jeanto@flofab.com'],
 
   // Évaluateurs : nom affiché dans la liste de l'administrateur → courriel.
   EVALUATEURS: {
