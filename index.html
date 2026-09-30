@@ -113,6 +113,23 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-vis
 .sw input:checked+span{background:var(--ok)}
 .sw input:checked+span::after{transform:translateX(22px)}
 .sw input:focus-visible+span{outline:3px solid var(--signal);outline-offset:2px}
+.tright{display:flex;align-items:center;gap:12px}
+.del{background:transparent;border:1.5px solid var(--line);color:var(--alert);border-radius:4px;height:32px;padding:0 10px;cursor:pointer;font:600 .85rem "Barlow",sans-serif}
+.del:hover{border-color:var(--alert)}
+.addrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+.addrow input{flex:1 1 180px;min-width:0}
+.env-row{display:grid;grid-template-columns:1.2fr 1.4fr 1fr auto;gap:8px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.env-row:last-child{border-bottom:0}
+.env-row input{padding:8px 10px}
+.env-row .rm{background:transparent;border:1.5px solid var(--line);color:var(--muted);border-radius:4px;height:38px;width:38px;cursor:pointer;font-size:1.1rem}
+.env-row .res{grid-column:1/-1;font-size:.88rem;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-weight:600;font-size:.82rem}
+.badge.ok{background:var(--ok);color:#fff}
+.badge.err{background:var(--alert);color:#fff}
+.badge.man{background:var(--signal);color:#1C2630}
+.env-head{display:grid;grid-template-columns:1.2fr 1.4fr 1fr auto;gap:8px;font-weight:600;font-size:.85rem;color:var(--muted);padding-bottom:4px}
+.env-head span:last-child{width:38px}
+@media (max-width:640px){.env-row,.env-head{grid-template-columns:1fr}.env-head{display:none}.env-row .rm{width:100%}}
 .lienbox{margin:14px 0;padding:14px;border:1px dashed var(--steel);border-radius:6px;background:var(--steel-soft)}
 .lienbox input{font-size:.85rem}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px;align-items:center}
@@ -504,22 +521,151 @@ async function initGestion(){
     res=await apiGet({action:"gestion",cle:KEY});
     if(!res.ok)throw new Error(res.erreur);
   }catch(err){app.innerHTML=`<div class="banner">Accès refusé : ${esc(err.message)}</div>`;return;}
-  const row=(role,courriel,titre,actif)=>`<div class="tog${actif?"":" off"}"><div class="who2"><strong>${esc(titre)}</strong>${titre!==courriel?`<small>${esc(courriel)}</small>`:""}</div><label class="sw"><input type="checkbox" role="switch" data-role="${role}" data-c="${esc(courriel)}" aria-label="${esc(titre)}" ${actif?"checked":""}><span></span></label></div>`;
-  app.innerHTML=`<section class="sheet intro"><p>Activez ou désactivez les personnes qui reçoivent des courriels. Les changements sont enregistrés immédiatement.</p>
-    <p><strong>Administrateur désactivé</strong> : ne reçoit plus les liens d'assignation, les avis ni la copie du rapport final.<br><strong>Évaluateur désactivé</strong> : n'apparaît plus dans la liste de désignation. Une évaluation déjà assignée à cette personne reste valide.</p></section>
-    <div class="section-h"><h2>Administrateurs</h2><span>Reçoivent les assignations et les copies</span></div>
-    <section class="sheet" id="lAdm">${res.administrateurs.map(a=>row("admin",a.courriel,a.courriel,a.actif)).join("")}</section>
-    <div class="section-h"><h2>Évaluateurs</h2><span>Proposés lors de la désignation</span></div>
-    <section class="sheet" id="lEv">${res.evaluateurs.map(a=>row("eval",a.courriel,a.nom,a.actif)).join("")}</section>
+  const row=(role,courriel,titre,actif)=>`<div class="tog${actif?"":" off"}"><div class="who2"><strong>${esc(titre)}</strong>${titre!==courriel?`<small>${esc(courriel)}</small>`:""}</div><div class="tright"><button class="del" type="button" data-del="${role}" data-c="${esc(courriel)}" data-n="${esc(titre)}" aria-label="Supprimer ${esc(titre)}">Supprimer</button><label class="sw"><input type="checkbox" role="switch" data-role="${role}" data-c="${esc(courriel)}" aria-label="${esc(titre)}" ${actif?"checked":""}><span></span></label></div></div>`;
+  app.innerHTML=`<div class="section-h"><h2>Envoyer le formulaire aux employés</h2><span id="envInfo">Courriel et texto</span></div>
+    <section class="sheet" id="envoi">
+      <p style="margin-top:0">Entrez le courriel et/ou le numéro de cellulaire de chaque employé, puis envoyez le lien du formulaire à tous en un clic. Les employés reçoivent le lien ; aucun code n'est requis.</p>
+      <div class="env-head"><span>Nom</span><span>Courriel</span><span>Téléphone (texto)</span><span></span></div>
+      <div id="envRows"></div>
+      <div class="actions" style="margin-top:12px"><button class="btn ghost" type="button" id="envAdd">+ Ajouter une ligne</button><button class="btn ghost" type="button" id="envPaste">Coller une liste</button><button class="btn ghost" type="button" id="envClear">Vider la liste</button></div>
+      <div id="envPasteBox" hidden style="margin-top:12px"><label class="f">Une personne par ligne : nom ; courriel ; téléphone (dans n'importe quel ordre, séparés par ; , ou tabulation)<textarea id="envPasteTxt" placeholder="Marc Tremblay ; marc@flofab.com ; 514-555-1234&#10;Julie Roy ; 450 555 9876"></textarea></label><div class="actions" style="margin-top:8px"><button class="btn" type="button" id="envPasteOk">Ajouter ces personnes</button></div></div>
+      <label class="f" style="margin-top:16px">Message (utilisez {prénom} et {lien})<textarea id="envMsg" style="min-height:90px"></textarea></label>
+      <div class="actions"><button class="btn" type="button" id="envSend">Envoyer</button><span class="status" id="envStatus" aria-live="polite"></span></div>
+    </section>
+    <section class="sheet intro"><p>Activez ou désactivez les personnes qui reçoivent des courriels. Les changements sont enregistrés immédiatement.</p>
+    <p><strong>Administrateur désactivé</strong> : ne reçoit plus les liens d'assignation, les avis ni le rapport final.<br><strong>Ajouter ou supprimer</strong> : utilisez les formulaires sous chaque liste ; les changements s'appliquent tout de suite, sans toucher au code.<br><strong>Évaluateur désactivé</strong> : n'apparaît plus dans la liste de désignation. Une évaluation déjà assignée à cette personne reste valide.</p></section>
+    <div class="section-h"><h2>Administrateurs</h2><span>Reçoivent les assignations et les rapports</span></div>
+    <section class="sheet"><div id="lAdm"></div>
+      <div class="addrow"><input type="email" id="addAdmEmail" placeholder="courriel.administrateur@flofab.com" aria-label="Courriel du nouvel administrateur" autocomplete="off"><button class="btn ghost" type="button" id="addAdm">Ajouter un administrateur</button><span class="status" id="stAdm" aria-live="polite"></span></div></section>
+    <div class="section-h"><h2>Évaluateurs (superviseurs)</h2><span>Proposés lors de la désignation</span></div>
+    <section class="sheet"><div id="lEv"></div>
+      <div class="addrow"><input type="text" id="addEvNom" placeholder="Nom complet" aria-label="Nom du nouvel évaluateur" autocomplete="off"><input type="email" id="addEvEmail" placeholder="courriel@flofab.com" aria-label="Courriel du nouvel évaluateur" autocomplete="off"><button class="btn ghost" type="button" id="addEv">Ajouter un évaluateur</button><span class="status" id="stEv" aria-live="polite"></span></div></section>
     <div class="section-h"><h2>État du service</h2><span>Vérification en direct</span></div>
     <section class="sheet" id="etat"><p style="margin:0;color:var(--muted)">Vérification…</p></section>
     <div class="actions"><button class="btn" type="button" id="testMail">Envoyer un courriel de test aux administrateurs</button><span class="status" id="status" aria-live="polite"></span></div>`;
+
+
+  /* ----- Ajouter / supprimer administrateurs et évaluateurs ----- */
+  function renderListes(r){
+    document.getElementById("lAdm").innerHTML=r.administrateurs.map(a=>row("admin",a.courriel,a.courriel,a.actif)).join("");
+    document.getElementById("lEv").innerHTML=r.evaluateurs.length?r.evaluateurs.map(a=>row("eval",a.courriel,a.nom,a.actif)).join(""):`<p style="margin:0;color:var(--muted)">Aucun évaluateur : ajoutez-en un ci-dessous.</p>`;
+  }
+  renderListes(res);
+  const stx=(id,msg,cls)=>{const s=document.getElementById(id);s.textContent=msg;s.className="status "+(cls||"");if(cls==="err"&&msg)setStatus(msg,"err");};
+  async function listeAction(payload,stId,okMsg){
+    stx(stId,"Enregistrement…");
+    try{
+      const r=await apiPost(Object.assign({cle:KEY},payload));
+      if(!r.ok)throw new Error(r.erreur||"Erreur inconnue.");
+      const g=await apiGet({action:"gestion",cle:KEY});
+      if(g.ok)renderListes(g);
+      stx(stId,okMsg,"ok");return true;
+    }catch(err){stx(stId,err.message,"err");return false;}
+  }
+  document.getElementById("addAdm").onclick=async()=>{
+    const i=document.getElementById("addAdmEmail"),v=i.value.trim();
+    if(!v){stx("stAdm","Entrez le courriel de l'administrateur.","err");return;}
+    if(await listeAction({action:"gestionAjout",role:"admin",courriel:v},"stAdm","Administrateur ajouté."))i.value="";
+  };
+  document.getElementById("addEv").onclick=async()=>{
+    const n=document.getElementById("addEvNom"),e=document.getElementById("addEvEmail");
+    if(!n.value.trim()||!e.value.trim()){stx("stEv","Entrez le nom et le courriel de l'évaluateur.","err");return;}
+    if(await listeAction({action:"gestionAjout",role:"eval",nom:n.value.trim(),courriel:e.value.trim()},"stEv","Évaluateur ajouté.")){n.value="";e.value="";}
+  };
+  app.addEventListener("click",async e=>{
+    const b=e.target.closest("[data-del]");if(!b)return;
+    const role=b.dataset.del,nom=b.dataset.n;
+    if(!window.confirm(`Supprimer ${nom} de la liste des ${role==="admin"?"administrateurs":"évaluateurs"} ?${role==="eval"?"\nUne évaluation déjà assignée à cette personne reste valide.":""}`))return;
+    b.disabled=true;
+    await listeAction({action:"gestionSuppr",role:role,courriel:b.dataset.c},role==="admin"?"stAdm":"stEv","Supprimé.");
+  });
+  /* ----- Envoi du formulaire aux employés ----- */
+  const ENV_KEY="flofab-envoi-brouillon-v1";
+  const MSG_DEFAUT="Bonjour {prénom}, voici le lien pour remplir votre autoévaluation annuelle Flo-Fab : {lien}";
+  let envRows=[],envMsg=MSG_DEFAUT,smsAuto=false;
+  try{const d=JSON.parse(localStorage.getItem(ENV_KEY)||"null");if(d){envRows=(d.rows||[]).map(r=>({nom:r.nom||"",courriel:r.courriel||"",telephone:r.telephone||""}));envMsg=d.msg||MSG_DEFAUT;}}catch(e){}
+  if(!envRows.length)envRows=[{nom:"",courriel:"",telephone:""}];
+  const envSave=()=>{try{localStorage.setItem(ENV_KEY,JSON.stringify({rows:envRows.map(r=>({nom:r.nom,courriel:r.courriel,telephone:r.telephone})),msg:envMsg}));}catch(e){}};
+  const normTel=t=>{const b=String(t||"").trim();if(!b)return"";const d=b.replace(/\D/g,"");if(b[0]==="+")return d.length>=8&&d.length<=15?"+"+d:"";if(d.length===10)return"+1"+d;if(d.length===11&&d[0]==="1")return"+"+d;return"";};
+  const emailOk=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+  const texteFinal=r=>{const prenom=(r.nom||"").trim().split(/\s+/)[0]||"";const base=location.origin+location.pathname;let m=envMsg.replace(/\{pr[ée]nom\}/gi,prenom);return /\{lien\}/i.test(m)?m.replace(/\{lien\}/gi,base):m+"\n"+base;};
+  const envDone=r=>r.st&&((!r.courriel.trim()||(r.st.c&&r.st.c.ok))&&(!r.telephone.trim()||(r.st.s&&(r.st.s.ok||r.st.s.non_configure))));
+  function envResHtml(r,i){
+    if(!r.st)return"";
+    const out=[];
+    if(r.st.erreur)out.push(`<span class="badge err">${esc(r.st.erreur)}</span>`);
+    if(r.st.c)out.push(r.st.c.ok?`<span class="badge ok">Courriel envoyé</span>`:`<span class="badge err">Courriel : ${esc(r.st.c.erreur)}</span>`);
+    if(r.st.s){
+      if(r.st.s.ok)out.push(`<span class="badge ok">Texto envoyé</span>`);
+      else if(r.st.s.non_configure||r.st.s.manuel){const tel=normTel(r.telephone);out.push(`<span class="badge man">Texto à envoyer vous-même</span>`+(tel?`<a class="btn ghost" style="text-decoration:none" href="sms:${esc(tel)}?&body=${encodeURIComponent(texteFinal(r))}">Ouvrir la messagerie</a>`:""));}
+      else out.push(`<span class="badge err">Texto : ${esc(r.st.s.erreur)}</span>`);
+    }
+    return out.length?`<div class="res">${out.join(" ")}</div>`:"";
+  }
+  function envRender(){
+    document.getElementById("envRows").innerHTML=envRows.map((r,i)=>`<div class="env-row" data-i="${i}">
+      <input type="text" data-f="nom" placeholder="Nom complet" value="${esc(r.nom)}" aria-label="Nom">
+      <input type="email" data-f="courriel" placeholder="nom@flofab.com" value="${esc(r.courriel)}" aria-label="Courriel" autocomplete="off">
+      <input type="tel" data-f="telephone" placeholder="514 555-1234" value="${esc(r.telephone)}" aria-label="Téléphone" autocomplete="off">
+      <button class="rm" type="button" data-rm="${i}" aria-label="Retirer cette ligne">✕</button>${envResHtml(r,i)}</div>`).join("");
+    const n=envRows.filter(r=>r.courriel.trim()||r.telephone.trim()).length;
+    const aFaire=envRows.filter(r=>(r.courriel.trim()||r.telephone.trim())&&!envDone(r)).length;
+    const b=document.getElementById("envSend");
+    b.textContent=aFaire?`Envoyer à ${aFaire} personne${aFaire>1?"s":""}`:(n?"Tout est envoyé":"Envoyer");
+    b.disabled=!aFaire;
+  }
+  document.getElementById("envMsg").value=envMsg;
+  document.getElementById("envMsg").addEventListener("input",e=>{envMsg=e.target.value;envSave();});
+  const envBox=document.getElementById("envRows");
+  envBox.addEventListener("input",e=>{const row=e.target.closest(".env-row");if(!row||!e.target.dataset.f)return;const r=envRows[+row.dataset.i];r[e.target.dataset.f]=e.target.value;if(r.st&&!envDone(r))r.st=null;envSave();
+    const n=envRows.filter(x=>(x.courriel.trim()||x.telephone.trim())&&!envDone(x)).length;const b=document.getElementById("envSend");b.textContent=n?`Envoyer à ${n} personne${n>1?"s":""}`:"Envoyer";b.disabled=!n;});
+  envBox.addEventListener("click",e=>{const rm=e.target.closest("[data-rm]");if(!rm)return;envRows.splice(+rm.dataset.rm,1);if(!envRows.length)envRows=[{nom:"",courriel:"",telephone:""}];envSave();envRender();});
+  document.getElementById("envAdd").onclick=()=>{envRows.push({nom:"",courriel:"",telephone:""});envSave();envRender();const l=envBox.querySelectorAll(".env-row");l[l.length-1].querySelector("input").focus();};
+  document.getElementById("envClear").onclick=()=>{if(!window.confirm("Vider toute la liste ?"))return;envRows=[{nom:"",courriel:"",telephone:""}];envSave();envRender();setEnvStatus("");};
+  document.getElementById("envPaste").onclick=()=>{const b=document.getElementById("envPasteBox");b.hidden=!b.hidden;if(!b.hidden)document.getElementById("envPasteTxt").focus();};
+  document.getElementById("envPasteOk").onclick=()=>{
+    const lignes=document.getElementById("envPasteTxt").value.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);let add=0;
+    lignes.forEach(l=>{const r={nom:"",courriel:"",telephone:""};const noms=[];
+      l.split(/[;\t,]/).map(x=>x.trim()).filter(Boolean).forEach(tok=>{
+        if(tok.includes("@"))r.courriel=tok;
+        else if(/^[+\d\s().-]+$/.test(tok)&&tok.replace(/\D/g,"").length>=7)r.telephone=tok;
+        else noms.push(tok);});
+      r.nom=noms.join(" ");if(r.nom||r.courriel||r.telephone){envRows.push(r);add++;}});
+    envRows=envRows.filter((r,i)=>r.nom||r.courriel||r.telephone||i===envRows.length-1&&envRows.length===1);
+    if(!envRows.length)envRows=[{nom:"",courriel:"",telephone:""}];
+    document.getElementById("envPasteTxt").value="";document.getElementById("envPasteBox").hidden=true;
+    envSave();envRender();setEnvStatus(`${add} personne${add>1?"s":""} ajoutée${add>1?"s":""}.`,"ok");};
+  function setEnvStatus(msg,cls){const s=document.getElementById("envStatus");s.textContent=msg;s.className="status "+(cls||"");if(cls==="err"&&msg)setStatus(msg,"err");}
+  document.getElementById("envSend").onclick=async()=>{
+    const todo=[];let invalides=0;
+    envRows.forEach((r,i)=>{
+      if(!r.courriel.trim()&&!r.telephone.trim())return;
+      if(envDone(r))return;
+      const pb=(r.courriel.trim()&&!emailOk(r.courriel.trim()))||(r.telephone.trim()&&!normTel(r.telephone));
+      if(pb||(!r.nom.trim())){invalides++;r.st={erreur:!r.nom.trim()?"Ajoutez un nom.":"Courriel ou téléphone invalide."};return;}
+      todo.push(i);});
+    envRender();
+    if(!todo.length){setEnvStatus(invalides?"Corrigez les lignes marquées en rouge.":"Rien à envoyer.","err");return;}
+    if(!window.confirm(`Envoyer le lien du formulaire à ${todo.length} personne${todo.length>1?"s":""} ?`))return;
+    const b=document.getElementById("envSend");b.disabled=true;setEnvStatus("Envoi en cours…");
+    try{
+      const r=await apiPost({action:"envoyerLiens",cle:KEY,message:envMsg,destinataires:todo.map(i=>({nom:envRows[i].nom,courriel:envRows[i].courriel.trim(),telephone:envRows[i].telephone.trim()}))});
+      if(!r.ok)throw new Error(r.erreur||"Erreur inconnue.");
+      smsAuto=!!r.sms_configure;
+      r.resultats.forEach((x,k)=>{envRows[todo[k]].st={erreur:x.erreur||"",c:x.courriel,s:x.sms};});
+      envSave();envRender();
+      const tot=r.resultats.length,bons=r.resultats.filter((x,k)=>envDone(envRows[todo[k]])).length;
+      setEnvStatus(bons===tot?`Envoyé à ${tot} personne${tot>1?"s":""}.`:`${bons} sur ${tot} terminé${bons>1?"s":""} : voir les lignes en erreur.`,bons===tot?"ok":"err");
+    }catch(err){setEnvStatus(err.message,"err");envRender();}
+  };
+  envRender();
   apiGet({action:"diagnostic"}).then(d=>{
+    document.getElementById("envInfo").textContent=d.sms?"Courriel et texto automatiques":"Courriel automatique · texto manuel (Twilio non configuré)";
     const li=(okv,txt)=>`<div class="tog"><span>${esc(txt)}</span><strong style="color:var(${okv?"--ok":"--alert"})">${okv?"OK":"À corriger"}</strong></div>`;
     document.getElementById("etat").innerHTML=
       li(d.feuille,"Feuille Google (enregistrement des réponses)")+li(d.drive,"Dossier Drive (signatures et PDF)")+
       li(d.courriel,"Envoi de courriels"+(d.courriels_restants!=null?" — "+d.courriels_restants+" envois restants aujourd'hui":""))+
-      li(d.url_formulaire,"Adresse de la page dans Code.gs (URL_FORMULAIRE)")+li(d.cle_admin,"Clé d'administration (CLE_ADMIN)");
+      li(d.url_formulaire,"Adresse de la page dans Code.gs (URL_FORMULAIRE)")+`<div class="tog"><span>Envoi automatique de textos (Twilio) — facultatif</span><strong style="color:var(${d.sms?"--ok":"--muted"})">${d.sms?"Activé":"Non configuré"}</strong></div>`+li(d.cle_admin,"Clé d'administration (CLE_ADMIN)");
   }).catch(()=>{document.getElementById("etat").innerHTML=`<p style="margin:0;color:var(--alert)">Vérification impossible.</p>`;});
   document.getElementById("testMail").onclick=async()=>{
     const b=document.getElementById("testMail");b.disabled=true;setStatus("Envoi du test…");
