@@ -98,6 +98,8 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-vis
 .attest input{margin-top:4px;width:18px;height:18px;flex-shrink:0}
 .signed{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--line)}
 .signed img{height:80px;background:#fff;border:1px solid var(--line);border-radius:4px;grid-row:span 3}
+.req{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;background:var(--alert);color:#fff;font:600 .72rem "Barlow",sans-serif;vertical-align:middle}
+.opt{display:inline-block;margin-left:8px;color:var(--muted);font:500 .8rem "Barlow",sans-serif}
 .toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:max-content;max-width:min(560px,92vw);background:var(--alert);color:#fff;padding:12px 18px;border-radius:8px;font-weight:600;z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.35);display:none}
 .toast.show{display:block}
 .invalid{border-color:var(--alert)!important;outline:2px solid var(--alert)}
@@ -130,6 +132,28 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-vis
 .env-head{display:grid;grid-template-columns:1.2fr 1.6fr auto;gap:8px;font-weight:600;font-size:.85rem;color:var(--muted);padding-bottom:4px}
 .env-head span:last-child{width:38px}
 @media (max-width:640px){.env-row,.env-head{grid-template-columns:1fr}.env-head{display:none}.env-row .rm{width:100%}}
+.dlg-fond{position:fixed;inset:0;background:rgba(10,20,30,.55);z-index:60;display:flex;align-items:center;justify-content:center;padding:16px}
+.dlg{background:var(--sheet);color:var(--ink);border:1px solid var(--line);border-radius:8px;max-width:480px;width:100%;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.4)}
+.dlg h3{font-size:1.4rem;margin-bottom:8px}
+.dlg p{margin:0 0 12px}
+.dlg label.chk{display:flex;gap:10px;align-items:flex-start;margin:12px 0;font-size:.92rem}
+.dlg label.chk input{margin-top:3px;width:18px;height:18px;flex-shrink:0}
+.dlg .actions{margin-top:16px;justify-content:flex-end}
+.btn.danger{background:var(--alert);border-color:var(--alert)}
+.btn.sm{padding:5px 10px;font-size:.82rem}
+.suivi-actions{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.suivi-table{width:100%;border-collapse:collapse;font-size:.88rem}
+.suivi-table th,.suivi-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.suivi-table th{font-family:"Barlow Condensed",sans-serif;font-size:1rem;white-space:nowrap}
+.suivi-table small{display:block;color:var(--muted);margin-top:2px}
+.dt{font-variant-numeric:tabular-nums;white-space:nowrap}
+.dt.ok{color:var(--ok);font-weight:600}
+.dt.wait{color:var(--muted)}
+.dt.cur{color:var(--alert);font-weight:600}
+.badge.neutral{background:var(--line);color:var(--ink)}
+.suivi-tot{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.filtres{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.filtres .btn.on{background:var(--steel);color:#fff}
 .lienbox{margin:14px 0;padding:14px;border:1px dashed var(--steel);border-radius:6px;background:var(--steel-soft)}
 .lienbox input{font-size:.85rem}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px;align-items:center}
@@ -253,7 +277,7 @@ const SECTIONS=[
 const IDS=[];SECTIONS.forEach(s=>s.items.forEach(()=>IDS.push("c"+(IDS.length+1))));
 
 const P=new URLSearchParams(location.search);
-const EID=P.get("id"),TOK=P.get("t"),ADM=P.get("a"),KEY=P.get("admin");
+const EID=P.get("id"),TOK=P.get("t"),ADM=P.get("a"),KEY=P.get("admin"),INV=P.get("i");
 const MODE=(EID&&TOK)?"sup":"emp";
 const ME=MODE; // rôle qui cote sur cette page
 const LS_KEY=MODE==="emp"?"flofab-eval-emp-v2":"flofab-eval-sup-v2-"+EID;
@@ -302,7 +326,8 @@ function introHtml(){
     <p><strong>Évaluez soigneusement chacune des qualités et compétences séparément.</strong></p>
     <ol><li>L'objectif est de faire ressortir vos points forts et de discuter de vos points à améliorer.</li>
     <li>Soyez objectif : évitez de tout évaluer comme « moyen », montrez-vous plus critique.</li>
-    <li>Choisissez la cote de 1 à 5 qui vous décrit le mieux.</li></ol></section>`;
+    <li>Choisissez la cote de 1 à 5 qui vous décrit le mieux.</li>
+    <li>Les deux questions de la section « Réflexion et objectifs » (en bas de la page) sont <strong>obligatoires</strong>.</li></ol></section>`;
 }
 function identHtml(){
   if(MODE==="sup"){
@@ -354,9 +379,9 @@ function openHtml(){
       <h3>Commentaires de l'évaluateur et objectifs convenus pour la prochaine année</h3><textarea data-k="commentaires"></textarea></section>`;
   }
   return `<section class="sheet open">
-    <h3>Qu'est-ce que j'ai accompli et amélioré durant la dernière année?</h3><textarea data-k="accompli"></textarea>
-    <h3>Qu'est-ce que je veux accomplir et améliorer dans la prochaine année?</h3><textarea data-k="prochaine"></textarea>
-    <h3>Autres commentaires, objectifs, etc.</h3><textarea data-k="autres"></textarea></section>`;
+    <h3>Qu'est-ce que j'ai accompli et amélioré durant la dernière année? <span class="req">obligatoire</span></h3><textarea data-k="accompli" aria-required="true" required></textarea>
+    <h3>Qu'est-ce que je veux accomplir et améliorer dans la prochaine année? <span class="req">obligatoire</span></h3><textarea data-k="prochaine" aria-required="true" required></textarea>
+    <h3>Autres commentaires, objectifs, etc. <span class="opt">(facultatif)</span></h3><textarea data-k="autres"></textarea></section>`;
 }
 function signHtml(){
   let prev="";
@@ -482,7 +507,9 @@ async function submit(){
   if(missing){setStatus(`Il manque ${missing} cote${missing>1?"s":""} (encadrée${missing>1?"s":""} en rouge).`,"err");return;}
   if(MODE==="emp"){
     const t=state.t;
-    body={action:"soumettreEmploye",
+    if(!(t.accompli||"").trim()){flag(document.querySelector('[data-k="accompli"]'),"Répondez à la question « Qu'est-ce que j'ai accompli et amélioré durant la dernière année? » (obligatoire).");return;}
+    if(!(t.prochaine||"").trim()){flag(document.querySelector('[data-k="prochaine"]'),"Répondez à la question « Qu'est-ce que je veux accomplir et améliorer dans la prochaine année? » (obligatoire).");return;}
+    body={action:"soumettreEmploye",invitation:INV||"",
       identite:{nom:t.nom.trim(),poste:t.poste,annee:(t.annee||CONFIG.ANNEE_DEFAUT).trim()},
       notes:Object.fromEntries(IDS.map(id=>[id,state.r[id]])),commentaires:collectComments(),
       reponses:{accompli:t.accompli||"",prochaine:t.prochaine||"",autres:t.autres||""}};
@@ -522,9 +549,22 @@ async function initGestion(){
     if(!res.ok)throw new Error(res.erreur);
   }catch(err){app.innerHTML=`<div class="banner">Accès refusé : ${esc(err.message)}</div>`;return;}
   const row=(role,courriel,titre,actif)=>`<div class="tog${actif?"":" off"}"><div class="who2"><strong>${esc(titre)}</strong>${titre!==courriel?`<small>${esc(courriel)}</small>`:""}</div><div class="tright"><button class="del" type="button" data-del="${role}" data-c="${esc(courriel)}" data-n="${esc(titre)}" aria-label="Supprimer ${esc(titre)}">Supprimer</button><label class="sw"><input type="checkbox" role="switch" data-role="${role}" data-c="${esc(courriel)}" aria-label="${esc(titre)}" ${actif?"checked":""}><span></span></label></div></div>`;
-  app.innerHTML=`<div class="section-h"><h2>Envoyer le formulaire aux employés</h2><span id="envInfo">Envoi par courriel</span></div>
+  app.innerHTML=`<div class="section-h"><h2>Suivi des évaluations</h2><span id="suiviInfo">Chargement…</span></div>
+    <section class="sheet" id="suivi">
+      <div class="suivi-tot" id="suiviTot"></div>
+      <div class="filtres"><button class="btn ghost on" type="button" data-filtre="tous">Tous</button><button class="btn ghost" type="button" data-filtre="cours">En cours</button><button class="btn ghost" type="button" data-filtre="termine">Terminés</button><button class="btn ghost" type="button" id="suiviRefresh">Actualiser</button><span class="status" id="suiviStatus" aria-live="polite"></span></div>
+      <div class="tscroll"><table class="suivi-table"><thead><tr><th>Employé</th><th>Lien envoyé</th><th>Répondu</th><th>Évaluateur désigné</th><th>Complété</th><th>État</th><th></th></tr></thead><tbody id="suiviRows"><tr><td colspan="7">Chargement…</td></tr></tbody></table></div>
+    </section>
+    <div class="section-h"><h2>Rappels</h2><span id="rapInfo">—</span></div>
+    <section class="sheet" id="rappels">
+      <p style="margin-top:0">Tant qu'une évaluation n'est pas terminée, un rappel est envoyé <strong id="rapFreqTxt">tous les 3 jours</strong> : à l'employé qui n'a pas répondu, à l'évaluateur qui n'a pas terminé, et un résumé aux administrateurs.</p>
+      <div class="tog"><span>Fréquence des rappels</span><select id="rapJours" aria-label="Fréquence des rappels" style="width:auto"><option value="1">Tous les jours</option><option value="2">Tous les 2 jours</option><option value="3">Tous les 3 jours</option><option value="5">Tous les 5 jours</option><option value="7">Toutes les semaines</option></select></div>
+      <div id="rapSwitches"></div>
+      <div class="actions"><button class="btn ghost" type="button" id="rapActiver">Activer les rappels quotidiens</button><button class="btn ghost" type="button" id="rapMaintenant">Envoyer les rappels maintenant</button><span class="status" id="rapStatus" aria-live="polite"></span></div>
+    </section>
+    <div class="section-h"><h2>Envoyer le formulaire aux employés</h2><span id="envInfo">Envoi par courriel</span></div>
     <section class="sheet" id="envoi">
-      <p style="margin-top:0">Entrez le nom et le courriel de chaque employé, puis envoyez-leur le lien du formulaire en un clic. Aucun code n'est requis.</p>
+      <p style="margin-top:0">Entrez le nom et le courriel de chaque employé, puis envoyez-leur le lien du formulaire en un clic. Chaque employé reçoit <strong>son propre lien</strong> : son nom est pré-rempli et le suivi ci-dessus se met à jour tout seul.</p>
       <div class="env-head"><span>Nom</span><span>Courriel</span><span></span></div>
       <div id="envRows"></div>
       <div class="actions" style="margin-top:12px"><button class="btn ghost" type="button" id="envAdd">+ Ajouter une ligne</button><button class="btn ghost" type="button" id="envPaste">Coller une liste</button><button class="btn ghost" type="button" id="envClear">Vider la liste</button></div>
@@ -544,6 +584,161 @@ async function initGestion(){
     <section class="sheet" id="etat"><p style="margin:0;color:var(--muted)">Vérification…</p></section>
     <div class="actions"><button class="btn" type="button" id="testMail">Envoyer un courriel de test aux administrateurs</button><span class="status" id="status" aria-live="polite"></span></div>`;
 
+
+
+  /* ----- Suivi des évaluations et rappels quotidiens ----- */
+  let suiviData=null,suiviFiltre="tous";
+  const fmtDt=s=>s?String(s).slice(0,16):"";
+  const dtCell=(s,courant)=>s?`<span class="dt ok">✓ ${esc(fmtDt(s))}</span>`:(courant?`<span class="dt cur">En attente</span>`:`<span class="dt wait">—</span>`);
+  function suiviRowHtml(p){
+    const etapes=["invite","assigner","evaluateur","complete"];
+    const k=etapes.indexOf(p.etape);
+    let inv;
+    if(p.invite_le)inv=dtCell(p.invite_le,false);
+    else if(p.type==="evaluation")inv=`<span class="dt wait">Lien général</span>`;
+    else inv=`<span class="dt cur">${p.invite_statut==="échec"?"Échec d'envoi":"Non envoyé"}</span>`;
+    if(p.invite_statut==="échec"&&p.erreur)inv+=`<small>${esc(p.erreur)}</small>`;
+    const rep=dtCell(p.repondu_le,k===0);
+    const des=p.designe_le?dtCell(p.designe_le,false)+`<small>${esc(p.evaluateur||"")}${p.evaluateur_avise_le?" · avisé "+esc(fmtDt(p.evaluateur_avise_le)):" · courriel non envoyé"}</small>`+(p.designe_par?`<small>par ${esc(p.designe_par)}</small>`:"")+(p.historique?`<small>précédent : ${esc(p.historique)}</small>`:""):dtCell("",k===1);
+    const com=p.complete_le?dtCell(p.complete_le,false)+(p.rapport_envoye_le?`<small>rapport envoyé ${esc(fmtDt(p.rapport_envoye_le))}</small>`:""):dtCell("",k===2);
+    const etat=p.etape==="complete"?`<span class="badge ok">Complété</span>`:`<span class="badge ${p.etape==="invite"?"neutral":"man"}">${esc(p.etape_libelle)}</span>`+(p.jours!=null?`<small>depuis ${p.jours} j</small>`:"")+(p.dernier_rappel_le?`<small>dernier rappel ${esc(fmtDt(p.dernier_rappel_le))}</small>`:"");
+    return `<tr><td><strong>${esc(p.nom)}</strong><small>${esc(p.type==="invitation"?p.courriel:(p.poste||""))}</small></td><td>${inv}</td><td>${rep}</td><td>${des}</td><td>${com}</td><td>${etat}</td><td><div class="suivi-actions">${p.etape==="evaluateur"?`<button class="btn ghost sm" type="button" data-change="${esc(p.ref)}" data-nom="${esc(p.nom)}" data-eval="${esc(p.evaluateur||"")}" aria-label="Changer l'évaluateur de ${esc(p.nom)}">Changer l'évaluateur</button>`:""}<button class="del" type="button" data-suppr="${esc(p.ref)}" data-type="${esc(p.type)}" data-nom="${esc(p.nom)}" data-etape="${esc(p.etape)}" aria-label="Supprimer le suivi de ${esc(p.nom)}">Supprimer</button></div></td></tr>`;
+  }
+  function renderSuivi(){
+    if(!suiviData)return;
+    const t=suiviData.totaux,items=suiviData.items.filter(p=>suiviFiltre==="tous"||(suiviFiltre==="cours"?p.etape!=="complete":p.etape==="complete"));
+    document.getElementById("suiviTot").innerHTML=`<span class="badge neutral">${t.invite} en attente de réponse</span><span class="badge man">${t.assigner} à désigner</span><span class="badge man">${t.evaluateur} chez l'évaluateur</span><span class="badge ok">${t.complete} complétée${t.complete>1?"s":""}</span>`;
+    document.getElementById("suiviInfo").textContent=`${suiviData.items.length} dossier${suiviData.items.length>1?"s":""}`;
+    document.getElementById("suiviRows").innerHTML=items.length?items.map(suiviRowHtml).join(""):`<tr><td colspan="7" style="color:var(--muted)">Aucun dossier${suiviFiltre==="tous"?" pour le moment : envoyez le formulaire aux employés ci-dessous.":" dans cette catégorie."}</td></tr>`;
+    document.querySelectorAll("[data-filtre]").forEach(b=>b.classList.toggle("on",b.dataset.filtre===suiviFiltre));
+    const r=suiviData.rappels,cfg=r.config;
+    const jr=cfg.jours||3,freq=jr===1?"tous les jours":(jr===7?"toutes les semaines":`tous les ${jr} jours`);
+    document.getElementById("rapInfo").textContent=r.declencheur?`Activés · ${freq} · vérification vers ${r.heure} h`:"Déclencheur non activé";
+    document.getElementById("rapFreqTxt").textContent=freq;
+    const sel=document.getElementById("rapJours");
+    if(![...sel.options].some(o=>+o.value===jr)){const o=document.createElement("option");o.value=jr;o.textContent=`Tous les ${jr} jours`;sel.appendChild(o);}
+    sel.value=String(jr);
+    document.getElementById("rapActiver").hidden=!!r.declencheur;
+    const sw=(k,txt)=>`<div class="tog"><span>${esc(txt)}</span><label class="sw"><input type="checkbox" role="switch" data-rap="${k}" aria-label="${esc(txt)}" ${cfg[k]?"checked":""}><span></span></label></div>`;
+    document.getElementById("rapSwitches").innerHTML=sw("actif","Rappels quotidiens actifs (pause générale)")+sw("employes","Rappeler les employés qui n'ont pas répondu")+sw("evaluateurs","Rappeler les évaluateurs qui n'ont pas terminé")+sw("admins","Résumé quotidien aux administrateurs");
+  }
+  async function chargerSuivi(){
+    try{
+      const r=await apiGet({action:"suivi",cle:KEY});
+      if(!r.ok)throw new Error(r.erreur);
+      suiviData=r;renderSuivi();
+    }catch(err){document.getElementById("suiviInfo").textContent="Suivi indisponible";document.getElementById("suiviRows").innerHTML=`<tr><td colspan="7" style="color:var(--alert)">${esc(err.message)}</td></tr>`;}
+  }
+  async function dialogueChangement(d){
+    let noms=[];
+    try{const l=await apiGet({action:"evaluateurs"});noms=(l.evaluateurs||[]).filter(n=>n!==d.actuel);}catch(e){}
+    return new Promise(resolve=>{
+      const fond=document.createElement("div");fond.className="dlg-fond";
+      fond.innerHTML=`<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgTitre2"><h3 id="dlgTitre2">Changer l'évaluateur de ${esc(d.nom)}</h3>
+        <p>Évaluateur actuel : <strong>${esc(d.actuel)}</strong>.</p>
+        <label class="f">Nouvel évaluateur *<select id="dlgEval"><option value="">Choisir…</option>${noms.map(n=>`<option>${esc(n)}</option>`).join("")}</select></label>
+        <p style="margin-top:12px;font-size:.92rem">Le lien de ${esc(d.actuel)} cessera de fonctionner et cette personne sera avisée par courriel. Le nouvel évaluateur recevra son lien par courriel et les administrateurs seront avisés. Les réponses de l'employé sont conservées.</p>
+        <div class="actions"><button class="btn ghost" type="button" id="dlgNon2">Annuler</button><button class="btn" type="button" id="dlgOui2">Changer l'évaluateur</button></div></div>`;
+      document.body.appendChild(fond);
+      const fin=v=>{const val=document.getElementById("dlgEval").value;fond.remove();document.removeEventListener("keydown",k);resolve(v&&val?val:null);};
+      const k=e=>{if(e.key==="Escape")fin(false);};
+      document.addEventListener("keydown",k);
+      fond.addEventListener("click",e=>{if(e.target===fond)fin(false);});
+      document.getElementById("dlgNon2").onclick=()=>fin(false);
+      document.getElementById("dlgOui2").onclick=()=>{if(!document.getElementById("dlgEval").value){document.getElementById("dlgEval").classList.add("invalid");return;}fin(true);};
+      document.getElementById("dlgEval").focus();
+    });
+  }
+  const stSuivi=(msg,cls)=>{const s=document.getElementById("suiviStatus");s.textContent=msg;s.className="status "+(cls||"");if(cls==="err"&&msg)setStatus(msg,"err");};
+  function confirmerSuppression(d){
+    return new Promise(resolve=>{
+      const enEval=d.type==="evaluation";
+      const fond=document.createElement("div");fond.className="dlg-fond";
+      fond.innerHTML=`<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgTitre"><h3 id="dlgTitre">Supprimer le suivi de ${esc(d.nom)} ?</h3>
+        <p>${enEval?"Le dossier est retiré du registre et de ce tableau. Ses liens (désignation, évaluation) cessent de fonctionner et les rappels s'arrêtent.":"L'invitation est retirée du registre. Son lien cesse de fonctionner et les rappels à cet employé s'arrêtent."}${d.etape==="complete"?" <strong>Le dossier est complété : cette action est définitive.</strong>":""}</p>
+        ${enEval?`<label class="chk"><input type="checkbox" id="dlgFichiers"><span>Mettre aussi à la corbeille Drive les fichiers du dossier (signatures et rapport PDF). Sinon, ils sont conservés dans le dossier Drive.</span></label>`:""}
+        <div class="actions"><button class="btn ghost" type="button" id="dlgNon">Annuler</button><button class="btn danger" type="button" id="dlgOui">Supprimer</button></div></div>`;
+      document.body.appendChild(fond);
+      const fin=v=>{const f=document.getElementById("dlgFichiers");const r={ok:v,fichiers:!!(f&&f.checked)};fond.remove();document.removeEventListener("keydown",esc_);resolve(r);};
+      const esc_=e=>{if(e.key==="Escape")fin(false);};
+      document.addEventListener("keydown",esc_);
+      fond.addEventListener("click",e=>{if(e.target===fond)fin(false);});
+      document.getElementById("dlgNon").onclick=()=>fin(false);
+      document.getElementById("dlgOui").onclick=()=>fin(true);
+      document.getElementById("dlgNon").focus();
+    });
+  }
+  document.getElementById("suivi").addEventListener("click",async e=>{
+    const f=e.target.closest("[data-filtre]");if(f){suiviFiltre=f.dataset.filtre;renderSuivi();}
+    if(e.target.closest("#suiviRefresh"))chargerSuivi();
+    const chg=e.target.closest("[data-change]");
+    if(chg){
+      const d={ref:chg.dataset.change,nom:chg.dataset.nom,actuel:chg.dataset.eval};
+      const nouveau=await dialogueChangement(d);if(!nouveau)return;
+      chg.disabled=true;stSuivi("Changement en cours…");
+      try{
+        const r=await apiPost({action:"changerEvaluateur",cle:KEY,ref:d.ref,evaluateur:nouveau});
+        if(!r.ok)throw new Error(r.erreur||"Erreur inconnue.");
+        await chargerSuivi();
+        stSuivi(`Évaluateur de ${d.nom} changé : ${r.precedent} → ${r.evaluateur}. `+(r.evaluateur_avise?"Le nouvel évaluateur a reçu son lien par courriel.":"Le courriel au nouvel évaluateur a échoué"+(r.erreur_evaluateur?" ("+r.erreur_evaluateur+")":"")+" : utilisez le lien de désignation pour le lui transmettre."),r.evaluateur_avise?"ok":"err");
+      }catch(err){chg.disabled=false;stSuivi(err.message,"err");}
+      return;
+    }
+    const del=e.target.closest("[data-suppr]");
+    if(del){
+      const d={ref:del.dataset.suppr,type:del.dataset.type,nom:del.dataset.nom,etape:del.dataset.etape};
+      const c=await confirmerSuppression(d);if(!c.ok)return;
+      del.disabled=true;stSuivi("Suppression…");
+      try{
+        const r=await apiPost({action:"suiviSuppr",cle:KEY,type:d.type,ref:d.ref,fichiers:c.fichiers});
+        if(!r.ok)throw new Error(r.erreur||"Erreur inconnue.");
+        await chargerSuivi();
+        stSuivi(`Suivi de ${d.nom} supprimé`+(c.fichiers?` (${r.fichiers_corbeille} fichier${r.fichiers_corbeille>1?"s":""} à la corbeille Drive).`:"."),"ok");
+      }catch(err){del.disabled=false;stSuivi(err.message,"err");}
+    }
+  });
+  const rapSt=(msg,cls)=>{const s=document.getElementById("rapStatus");s.textContent=msg;s.className="status "+(cls||"");if(cls==="err"&&msg)setStatus(msg,"err");};
+  document.getElementById("rapSwitches").addEventListener("change",async e=>{
+    const cb=e.target.closest("input[data-rap]");if(!cb)return;
+    cb.disabled=true;rapSt("Enregistrement…");
+    try{
+      const r=await apiPost({action:"rappelsMaj",cle:KEY,config:{[cb.dataset.rap]:cb.checked}});
+      if(!r.ok)throw new Error(r.erreur||"Erreur inconnue.");
+      suiviData.rappels.config=r.config;rapSt("Enregistré.","ok");
+    }catch(err){cb.checked=!cb.checked;rapSt(err.message,"err");}
+    cb.disabled=false;
+  });
+  document.getElementById("rapJours").addEventListener("change",async e=>{
+    const sel=e.target,ancien=String(suiviData&&suiviData.rappels.config.jours||3);
+    sel.disabled=true;rapSt("Enregistrement…");
+    try{
+      const r=await apiPost({action:"rappelsMaj",cle:KEY,config:{jours:+sel.value}});
+      if(!r.ok)throw new Error(r.erreur||"Erreur inconnue.");
+      suiviData.rappels.config=r.config;renderSuivi();rapSt("Fréquence enregistrée.","ok");
+    }catch(err){sel.value=ancien;rapSt(err.message,"err");}
+    sel.disabled=false;
+  });
+  document.getElementById("rapActiver").onclick=async()=>{
+    rapSt("Activation…");
+    try{
+      const r=await apiPost({action:"rappelsActiver",cle:KEY});
+      if(!r.ok)throw new Error(r.erreur||"Erreur inconnue.");
+      suiviData.rappels.declencheur=true;renderSuivi();rapSt("Rappels quotidiens activés.","ok");
+    }catch(err){rapSt(err.message,"err");}
+  };
+  document.getElementById("rapMaintenant").onclick=async()=>{
+    if(!window.confirm("Envoyer maintenant les rappels (employés, évaluateurs et résumé aux administrateurs), sans attendre le délai habituel ?"))return;
+    const b=document.getElementById("rapMaintenant");b.disabled=true;rapSt("Envoi en cours…");
+    try{
+      const r=await apiPost({action:"rappelsExecuter",cle:KEY});
+      if(!r.ok)throw new Error(r.erreur||"Erreur inconnue.");
+      const parts=[`${r.employes} employé${r.employes>1?"s":""}`,`${r.evaluateurs} évaluateur${r.evaluateurs>1?"s":""}`,r.resume?"résumé aux administrateurs":"aucun résumé"];
+      rapSt(`Envoyé : ${parts.join(", ")}.`+(r.erreurs&&r.erreurs.length?` Erreurs : ${r.erreurs.join(" ; ")}`:""),r.erreurs&&r.erreurs.length?"err":"ok");
+      chargerSuivi();
+    }catch(err){rapSt(err.message,"err");}
+    b.disabled=false;
+  };
+  chargerSuivi();
 
   /* ----- Ajouter / supprimer administrateurs et évaluateurs ----- */
   function renderListes(r){
@@ -645,7 +840,7 @@ async function initGestion(){
       const r=await apiPost({action:"envoyerLiens",cle:KEY,message:envMsg,destinataires:todo.map(i=>({nom:envRows[i].nom,courriel:envRows[i].courriel.trim()}))});
       if(!r.ok)throw new Error(r.erreur||"Erreur inconnue.");
       r.resultats.forEach((x,k)=>{envRows[todo[k]].st={erreur:x.erreur||"",c:x.courriel};});
-      envSave();envRender();
+      envSave();envRender();chargerSuivi();
       const tot=r.resultats.length,bons=r.resultats.filter((x,k)=>envDone(envRows[todo[k]])).length;
       setEnvStatus(bons===tot?`Envoyé à ${tot} personne${tot>1?"s":""}.`:`${bons} sur ${tot} envoyé${bons>1?"s":""} : voir les lignes en erreur.`,bons===tot?"ok":"err");
     }catch(err){setEnvStatus(err.message,"err");envRender();}
@@ -693,6 +888,7 @@ function bindCopy(){
     b.textContent="Lien copié ✓";setTimeout(()=>{b.textContent="Copier le lien";},2500);
   };
 }
+function ADM_ID(v){try{if(v!==undefined)localStorage.setItem("flofab-admin-identite",v);return localStorage.getItem("flofab-admin-identite")||"";}catch(e){return"";}}
 async function initAdmin(){
   document.getElementById("roleTag").textContent="Désignation de l'évaluateur";
   if(!apiReady()){app.innerHTML=`<div class="banner">Le service n'est pas configuré (CONFIG.API_URL).</div>`;return;}
@@ -708,24 +904,34 @@ async function initAdmin(){
       <div class="f"><label class="f">Poste</label><span class="ro">${esc(e.identite.poste)}</span></div>
       <div class="f"><label class="f">Année évaluée</label><span class="ro">${esc(e.identite.annee)}</span></div>
       <div class="f"><label class="f">Autoévaluation signée le</label><span class="ro">${esc(e.date_signature)}</span></div></div></section>
-      <section class="sheet intro"><h3 style="font-size:1.4rem;margin-bottom:8px">Désigner l'évaluateur</h3>
-      <p>Choisissez la personne qui évaluera cet employé. Son lien personnel s'affichera ici : copiez-le et transmettez-le vous-même. Aucun courriel n'est envoyé à l'évaluateur.</p>
-      ${e.evaluateur?`<p><strong>Évaluateur actuel : ${esc(e.evaluateur)}.</strong> Si vous en désignez un autre, le lien précédent cessera de fonctionner.</p>${lienBloc(e.lien_evaluateur)}`:""}
-      <label class="f" style="max-width:420px">Évaluateur *<select id="evSel"><option value="">Choisir…</option>${(lst.evaluateurs||[]).map(n=>`<option${n===e.evaluateur?" selected":""}>${esc(n)}</option>`).join("")}</select></label>
-      <div class="actions"><button class="btn" type="button" id="assign">${e.evaluateur?"Changer l'évaluateur (nouveau lien)":"Désigner l'évaluateur"}</button><span class="status" id="status" aria-live="polite"></span></div></section>
+      ${e.evaluateur?`<section class="sheet intro"><h3 style="font-size:1.4rem;margin-bottom:8px">Évaluateur déjà désigné : ${esc(e.evaluateur)}</h3>
+      <p>${e.designe_le?"Désigné le "+esc(String(e.designe_le).slice(0,16))+". ":""}${e.designe_par?"Par "+esc(e.designe_par)+". ":""}<strong>Il n'est plus possible de désigner un autre évaluateur pour ce dossier.</strong> Un changement ne peut se faire que depuis la console d'administration (clé requise). Si le courriel de l'évaluateur ne lui est pas parvenu, vous pouvez lui transmettre son lien personnel ci-dessous (il ne fonctionne qu'une fois).</p>${lienBloc(e.lien_evaluateur)}</section>`
+      :`<section class="sheet intro"><h3 style="font-size:1.4rem;margin-bottom:8px">Désigner l'évaluateur</h3>
+      <p>Choisissez la personne qui évaluera cet employé. Elle recevra automatiquement son lien personnel par courriel. <strong>Attention : le premier administrateur qui désigne l'évaluateur fait foi. Si un autre administrateur tente ensuite d'en désigner un autre, il sera refusé et recevra un courriel d'avertissement.</strong></p>
+      <label class="f" style="max-width:420px">Vous êtes (administrateur) *<select id="parSel"><option value="">Choisir…</option>${(e.administrateurs||[]).map(a=>`<option value="${esc(a)}"${a===ADM_ID()?" selected":""}>${esc(a)}</option>`).join("")}</select></label>
+      <label class="f" style="max-width:420px;margin-top:12px">Évaluateur *<select id="evSel"><option value="">Choisir…</option>${(lst.evaluateurs||[]).map(n=>`<option>${esc(n)}</option>`).join("")}</select></label>
+      <div class="actions"><button class="btn" type="button" id="assign">Désigner l'évaluateur</button><span class="status" id="status" aria-live="polite"></span></div></section>`}
       <div class="actions"><button class="btn ghost" type="button" id="gest">Gestion des destinataires (admin)</button></div>`;
     bindCopy();
     document.getElementById("gest").onclick=()=>{const k=window.prompt("Clé d'administration :");if(k)location.href=location.pathname+"?admin="+encodeURIComponent(k.trim());};
-    document.getElementById("assign").onclick=async()=>{
+    const btnAssign=document.getElementById("assign");
+    if(btnAssign)btnAssign.onclick=async()=>{
       const v=document.getElementById("evSel").value;
+      const par=document.getElementById("parSel").value;
+      if(!par){setStatus("Choisissez qui vous êtes dans la liste des administrateurs.","err");return;}
       if(!v){setStatus("Choisissez un évaluateur.","err");return;}
+      ADM_ID(par);
+      if(!window.confirm(`Désigner ${v} comme évaluateur ?\nCe choix est définitif : personne ne pourra ensuite désigner un autre évaluateur pour ce dossier.`))return;
       const btn=document.getElementById("assign");btn.disabled=true;setStatus("Envoi en cours…");
       try{
-        const r2=await apiPost({action:"assigner",id:EID,jeton_admin:ADM,evaluateur:v});
+        const r2=await apiPost({action:"assigner",id:EID,jeton_admin:ADM,evaluateur:v,par:par});
         if(!r2.ok)throw new Error(r2.erreur||"Erreur inconnue.");
-        app.innerHTML=`<section class="sheet done"><h2>Évaluateur désigné : ${esc(v)}</h2><p>Aucun courriel n'a été envoyé à l'évaluateur. Copiez son lien personnel ci-dessous et transmettez-le-lui (il ne fonctionne qu'une fois).</p>${lienBloc(r2.lien)}<p>${r2.avis?"Les administrateurs ont reçu le même lien par courriel.":"L'avis par courriel aux administrateurs n'a pas pu être envoyé, mais ce lien est valide."} Vous pouvez rouvrir votre lien d'assignation pour le retrouver ou changer d'évaluateur tant que l'évaluation n'est pas signée.</p></section>`;bindCopy();
+        app.innerHTML=`<section class="sheet done"><h2>Évaluateur désigné : ${esc(v)}</h2><p>${r2.evaluateur_avise?"Un courriel avec son lien personnel a été envoyé à l'évaluateur.":"Le courriel à l'évaluateur n'a pas pu être envoyé"+(r2.erreur_evaluateur?" ("+esc(r2.erreur_evaluateur)+")":"")+" : copiez son lien ci-dessous et transmettez-le-lui."} Le lien ne fonctionne qu'une fois.</p>${lienBloc(r2.lien)}<p>${r2.avis?"Les autres administrateurs ont été avisés par courriel.":"L'avis par courriel aux autres administrateurs n'a pas pu être envoyé, mais ce lien est valide."} La désignation est définitive : il n'est plus possible de désigner un autre évaluateur. Vous pouvez rouvrir votre lien d'assignation pour retrouver ce lien.</p></section>`;bindCopy();
         window.scrollTo({top:0});
-      }catch(err){setStatus("L'envoi a échoué : "+err.message,"err");btn.disabled=false;}
+      }catch(err){
+        if(/déjà été désigné/.test(err.message)){await initAdmin();setStatus(err.message,"err");return;}
+        setStatus("L'envoi a échoué : "+err.message,"err");btn.disabled=false;
+      }
     };
   }catch(err){app.innerHTML=`<div class="banner">Impossible de charger la page : ${esc(err.message)}</div>`;}
 }
@@ -737,6 +943,14 @@ async function initAdmin(){
   if(MODE==="emp"){
     document.getElementById("yr").textContent=state.t.annee||CONFIG.ANNEE_DEFAUT;
     build();
+    if(apiReady()&&INV){
+      apiGet({action:"invitation",i:INV}).then(r=>{
+        if(!r||!r.ok)return;
+        if(r.deja_repondu){app.innerHTML=`<section class="sheet done"><h2>Autoévaluation déjà envoyée</h2><p>Votre autoévaluation a déjà été envoyée le ${esc(String(r.repondu_le||"").slice(0,10))}. Communiquez avec les ressources humaines pour toute modification.</p></section>`;return;}
+        const inp=document.querySelector('[data-k="nom"]');
+        if(inp&&!inp.value.trim()&&r.nom){inp.value=r.nom;state.t.nom=r.nom;save();}
+      }).catch(()=>{});
+    }
     if(apiReady()){
       apiGet({action:"ping"}).then(r=>{
         if(r&&r.ok)return;
