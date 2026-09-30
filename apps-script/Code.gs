@@ -13,6 +13,8 @@ const CONFIG = {
   // Ouvrir : URL_FORMULAIRE + '?admin=' + CLE_ADMIN. Le panneau reste refusé tant que la clé n'est pas changée.
   CLE_ADMIN: 'CHANGEZ-MOI',
 
+  // Administrateurs et évaluateurs (valeurs initiales) : une fois la console utilisée pour ajouter ou supprimer
+  // quelqu'un, ce sont les listes de la console qui s'appliquent.
   // Administrateurs : reçoivent un lien d'assignation dès qu'un employé envoie son autoévaluation
   // et désignent l'évaluateur (en le choisissant dans la liste EVALUATEURS ci-dessous). Ils reçoivent aussi une copie du rapport final en PDF.
   ADMINISTRATEURS: ['jeanto@flofab.com'],
@@ -83,7 +85,7 @@ function doGet(e) {
     const a = (e.parameter || {}).action;
     if (a === 'diagnostic') return json_(diagnostic_());
     if (a === 'ping') return json_({ ok: true, message: 'Le service fonctionne.' });
-    if (a === 'evaluateurs') return json_({ ok: true, evaluateurs: Object.keys(CONFIG.EVALUATEURS).filter(n => actif_('eval', CONFIG.EVALUATEURS[n])) });
+    if (a === 'evaluateurs') return json_({ ok: true, evaluateurs: Object.keys(evals_()).filter(n => actif_('eval', evals_()[n])) });
     if (a === 'gestion') return json_(gestion_(e.parameter.cle));
     if (a === 'obtenirAdmin') return json_(obtenirAdmin_(e.parameter.id, e.parameter.a));
     if (a === 'obtenir') return json_(obtenir_(e.parameter.id, e.parameter.t));
@@ -97,7 +99,10 @@ function doPost(e) {
   try {
     const b = JSON.parse(e.postData.contents);
     if (b.action === 'soumettreEmploye') return json_(soumettreEmploye_(b));
+    if (b.action === 'envoyerLiens') return json_(envoyerLiens_(b));
     if (b.action === 'testCourriel') return json_(testCourriel_(b.cle));
+    if (b.action === 'gestionAjout') return json_(gestionAjout_(b));
+    if (b.action === 'gestionSuppr') return json_(gestionSuppr_(b));
     if (b.action === 'gestionMaj') return json_(gestionMaj_(b));
     if (b.action === 'assigner') return json_(assigner_(b));
     if (b.action === 'soumettreEvaluateur') return json_(soumettreEvaluateur_(b));
@@ -190,7 +195,7 @@ function obtenirAdmin_(id, jetonAdmin) {
 function assigner_(b) {
   const nomEval = txt_(b.evaluateur, 120);
   urlBase_();
-  const courriel = CONFIG.EVALUATEURS[nomEval];
+  const courriel = evals_()[nomEval];
   if (!courriel) throw new Error('Évaluateur inconnu : choisissez un nom dans la liste.');
   if (!actif_('eval', courriel)) throw new Error('Cet évaluateur est désactivé : choisissez-en un autre.');
   const lock = LockService.getScriptLock();
@@ -377,35 +382,59 @@ function inactifs_() {
   try { return JSON.parse(PropertiesService.getScriptProperties().getProperty(PROP_INACTIFS) || '[]'); } catch (err) { return []; }
 }
 function actif_(role, courriel) { return inactifs_().indexOf(role + ':' + String(courriel).toLowerCase()) < 0; }
+/* Listes modifiables depuis la console : stockées dans les propriétés du script.
+   Tant qu'elles n'ont pas été modifiées, les listes de CONFIG (ADMINISTRATEURS, EVALUATEURS) servent de valeurs initiales. */
+const PROP_ADMINS = 'LISTE_ADMINISTRATEURS';
+const PROP_EVALS = 'LISTE_EVALUATEURS';
+function lireProp_(cle) {
+  try { const v = PropertiesService.getScriptProperties().getProperty(cle); return v === null || v === undefined ? null : JSON.parse(v); } catch (err) { return null; }
+}
+function admins_() {
+  const l = lireProp_(PROP_ADMINS);
+  return (Array.isArray(l) && l.length ? l : CONFIG.ADMINISTRATEURS).map(x => String(x).trim().toLowerCase());
+}
+function evals_() { // { nom: courriel }
+  const o = lireProp_(PROP_EVALS);
+  return o && typeof o === 'object' && !Array.isArray(o) ? o : Object.assign({}, CONFIG.EVALUATEURS);
+}
 function adminsActifs_() {
-  const l = CONFIG.ADMINISTRATEURS.filter(c => actif_('admin', c));
-  return l.length ? l : CONFIG.ADMINISTRATEURS; // sécurité : jamais aucun administrateur
+  const tous = admins_();
+  const l = tous.filter(c => actif_('admin', c));
+  return l.length ? l : tous; // sécurité : jamais aucun administrateur
+}
+// La clé peut être définie dans les propriétés du script (recommandé : elle n'est alors pas dans le code) ou dans CONFIG.
+function cleAdmin_() {
+  let k = null;
+  try { k = PropertiesService.getScriptProperties().getProperty('CLE_ADMIN'); } catch (e) { k = null; }
+  return String(k || CONFIG.CLE_ADMIN || '');
 }
 function verifCle_(cle) {
-  const k = String(CONFIG.CLE_ADMIN || '');
-  if (k.length < 8 || k === 'CHANGEZ-MOI') throw new Error('La clé d’administration n’est pas configurée (CLE_ADMIN dans Code.gs, 8 caractères minimum).');
+  const k = cleAdmin_();
+  if (k.length < 8 || k === 'CHANGEZ-MOI') throw new Error('La clé d’administration n’est pas configurée (propriété CLE_ADMIN du script ou CLE_ADMIN dans Code.gs, 8 caractères minimum).');
   if (String(cle || '') !== k) throw new Error('Clé d’administration invalide.');
 }
 function gestion_(cle) {
   verifCle_(cle);
+  const ev = evals_();
   return {
     ok: true,
-    administrateurs: CONFIG.ADMINISTRATEURS.map(c => ({ courriel: c, actif: actif_('admin', c) })),
-    evaluateurs: Object.keys(CONFIG.EVALUATEURS).map(n => ({ nom: n, courriel: CONFIG.EVALUATEURS[n], actif: actif_('eval', CONFIG.EVALUATEURS[n]) }))
+    administrateurs: admins_().map(c => ({ courriel: c, actif: actif_('admin', c) })),
+    evaluateurs: Object.keys(ev).map(n => ({ nom: n, courriel: ev[n], actif: actif_('eval', ev[n]) }))
   };
 }
 function gestionMaj_(b) {
   verifCle_(b.cle);
   const role = b.role, courriel = String(b.courriel || '').toLowerCase(), actif = b.actif === true;
-  const connus = role === 'admin' ? CONFIG.ADMINISTRATEURS : role === 'eval' ? Object.keys(CONFIG.EVALUATEURS).map(n => CONFIG.EVALUATEURS[n]) : null;
-  if (!connus || connus.map(x => x.toLowerCase()).indexOf(courriel) < 0) throw new Error('Destinataire inconnu.');
+  const ev = evals_();
+  const connus = role === 'admin' ? admins_() : role === 'eval' ? Object.keys(ev).map(n => String(ev[n]).toLowerCase()) : null;
+  if (!connus || connus.indexOf(courriel) < 0) throw new Error('Destinataire inconnu.');
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
     let liste = inactifs_().filter(x => x !== role + ':' + courriel);
     if (!actif) {
       if (role === 'admin') {
-        const restants = CONFIG.ADMINISTRATEURS.filter(c => c.toLowerCase() !== courriel && liste.indexOf('admin:' + c.toLowerCase()) < 0);
+        const restants = admins_().filter(c => c !== courriel && liste.indexOf('admin:' + c) < 0);
         if (!restants.length) throw new Error('Au moins un administrateur doit rester actif.');
       }
       liste.push(role + ':' + courriel);
@@ -416,6 +445,168 @@ function gestionMaj_(b) {
     lock.releaseLock();
   }
 }
+function courrielValide_(c) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c); }
+function sauverListes_(admins, evals) {
+  const p = PropertiesService.getScriptProperties();
+  if (admins) p.setProperty(PROP_ADMINS, JSON.stringify(admins));
+  if (evals) p.setProperty(PROP_EVALS, JSON.stringify(evals));
+}
+/** Ajoute un administrateur (role 'admin', courriel) ou un évaluateur (role 'eval', nom + courriel). */
+function gestionAjout_(b) {
+  verifCle_(b.cle);
+  const role = b.role, courriel = txt_(b.courriel, 200).toLowerCase();
+  if (!courrielValide_(courriel)) throw new Error('Courriel invalide.');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    if (role === 'admin') {
+      const l = admins_();
+      if (l.indexOf(courriel) >= 0) throw new Error('Cet administrateur est déjà dans la liste.');
+      l.push(courriel);
+      sauverListes_(l, null);
+    } else if (role === 'eval') {
+      const nom = txt_(b.nom, 120);
+      if (!nom) throw new Error('Le nom de l’évaluateur est obligatoire.');
+      const ev = evals_();
+      if (Object.keys(ev).some(n => n.toLowerCase() === nom.toLowerCase())) throw new Error('Un évaluateur porte déjà ce nom.');
+      if (Object.keys(ev).some(n => String(ev[n]).toLowerCase() === courriel)) throw new Error('Ce courriel est déjà dans la liste des évaluateurs.');
+      ev[nom] = courriel;
+      sauverListes_(null, ev);
+    } else {
+      throw new Error('Rôle inconnu.');
+    }
+    return { ok: true };
+  } finally {
+    lock.releaseLock();
+  }
+}
+/** Supprime un administrateur ou un évaluateur (par courriel). Une évaluation déjà assignée à un évaluateur supprimé reste valide. */
+function gestionSuppr_(b) {
+  verifCle_(b.cle);
+  const role = b.role, courriel = String(b.courriel || '').toLowerCase();
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    if (role === 'admin') {
+      const l = admins_();
+      if (l.indexOf(courriel) < 0) throw new Error('Destinataire inconnu.');
+      const restants = l.filter(c => c !== courriel);
+      if (!restants.length) throw new Error('Au moins un administrateur est requis : ajoutez-en un autre avant de supprimer celui-ci.');
+      if (!restants.some(c => actif_('admin', c))) throw new Error('Au moins un administrateur actif est requis : activez-en un autre avant de supprimer celui-ci.');
+      sauverListes_(restants, null);
+    } else if (role === 'eval') {
+      const ev = evals_();
+      const nom = Object.keys(ev).find(n => String(ev[n]).toLowerCase() === courriel);
+      if (!nom) throw new Error('Destinataire inconnu.');
+      delete ev[nom];
+      sauverListes_(null, ev);
+    } else {
+      throw new Error('Rôle inconnu.');
+    }
+    PropertiesService.getScriptProperties().setProperty(PROP_INACTIFS, JSON.stringify(inactifs_().filter(x => x !== role + ':' + courriel)));
+    return { ok: true };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/* ---------- Envoi du formulaire aux employés (console admin) ---------- */
+const MESSAGE_DEFAUT = 'Bonjour {prénom}, voici le lien pour remplir votre autoévaluation annuelle Flo-Fab : {lien}';
+const MAX_DESTINATAIRES = 200;
+
+// Les identifiants Twilio se placent dans les PROPRIÉTÉS DU SCRIPT (Paramètres du projet), jamais dans le code :
+// TWILIO_SID, TWILIO_TOKEN, TWILIO_DE (numéro expéditeur au format +1XXXXXXXXXX).
+function smsConfigure_() {
+  try {
+    const p = PropertiesService.getScriptProperties();
+    return !!(p.getProperty('TWILIO_SID') && p.getProperty('TWILIO_TOKEN') && p.getProperty('TWILIO_DE'));
+  } catch (e) { return false; }
+}
+function telephone_(t) {
+  const brut = String(t || '').trim();
+  if (!brut) return '';
+  const chiffres = brut.replace(/\D/g, '');
+  if (brut.charAt(0) === '+') return chiffres.length >= 8 && chiffres.length <= 15 ? '+' + chiffres : '';
+  if (chiffres.length === 10) return '+1' + chiffres;
+  if (chiffres.length === 11 && chiffres.charAt(0) === '1') return '+' + chiffres;
+  return '';
+}
+function envoyerSms_(vers, texte) {
+  const p = PropertiesService.getScriptProperties();
+  const sid = p.getProperty('TWILIO_SID'), jeton = p.getProperty('TWILIO_TOKEN'), de = p.getProperty('TWILIO_DE');
+  const rep = UrlFetchApp.fetch('https://api.twilio.com/2010-04-01/Accounts/' + sid + '/Messages.json', {
+    method: 'post',
+    muteHttpExceptions: true,
+    headers: { Authorization: 'Basic ' + Utilities.base64Encode(sid + ':' + jeton) },
+    payload: { To: vers, From: de, Body: texte }
+  });
+  const code = rep.getResponseCode();
+  if (code < 200 || code >= 300) {
+    let m = '';
+    try { m = JSON.parse(rep.getContentText()).message || ''; } catch (e) { m = ''; }
+    throw new Error('Twilio ' + code + (m ? ' : ' + m : ''));
+  }
+}
+function masquerCourriel_(e) { const i = String(e).indexOf('@'); return i > 1 ? e.charAt(0) + '***' + e.slice(i) : '***'; }
+function masquerTel_(t) { return '***' + String(t).slice(-4); }
+function feuilleEnvois_() {
+  const ss = classeur_();
+  let sh = ss.getSheetByName('Envois');
+  if (!sh) {
+    sh = ss.insertSheet('Envois');
+    sh.getRange(1, 1, 1, 6).setValues([['date', 'nom', 'canal', 'destination (masquée)', 'statut', 'erreur']]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+function envoyerLiens_(b) {
+  verifCle_(b.cle);
+  const base = urlBase_();
+  const liste = Array.isArray(b.destinataires) ? b.destinataires : [];
+  if (!liste.length) throw new Error('Aucun destinataire.');
+  if (liste.length > MAX_DESTINATAIRES) throw new Error('Maximum ' + MAX_DESTINATAIRES + ' destinataires par envoi.');
+  const modele = txt_(b.message, 1000) || MESSAGE_DEFAUT;
+  const smsOk = smsConfigure_();
+  const journal = [];
+  const resultats = liste.map(d => {
+    const nom = txt_(d && d.nom, 120);
+    const prenom = nom.split(/\s+/)[0] || '';
+    let texte = modele.replace(/\{pr[ée]nom\}/gi, prenom).replace(/\s+,/g, ',');
+    texte = /\{lien\}/i.test(texte) ? texte.replace(/\{lien\}/gi, base) : texte + '\n' + base;
+    const courriel = txt_(d && d.courriel, 200).toLowerCase();
+    const tel = telephone_(d && d.telephone);
+    const res = { nom: nom, courriel: null, sms: null };
+    if (!courriel && !tel) {
+      res.erreur = 'Aucun courriel ni numéro de téléphone valide.';
+      return res;
+    }
+    if (courriel) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(courriel)) {
+        res.courriel = { ok: false, erreur: 'Courriel invalide.' };
+      } else {
+        try {
+          const html = esc_(texte).replace(/\n/g, '<br>').split(esc_(base)).join('<a href="' + base + '">' + esc_(base) + '</a>');
+          envoyer_({ to: courriel, name: CONFIG.NOM_EXPEDITEUR, subject: 'Autoévaluation annuelle – Flo-Fab', htmlBody: '<p>' + html + '</p>' });
+          res.courriel = { ok: true };
+        } catch (err) { res.courriel = { ok: false, erreur: err.message }; }
+      }
+      journal.push([horodatage_(), nom, 'courriel', masquerCourriel_(courriel), res.courriel.ok ? 'envoyé' : 'échec', res.courriel.ok ? '' : res.courriel.erreur]);
+    }
+    if (String(d && d.telephone || '').trim()) {
+      if (!tel) {
+        res.sms = { ok: false, erreur: 'Numéro de téléphone invalide.' };
+      } else if (!smsOk) {
+        res.sms = { ok: false, non_configure: true, erreur: 'Envoi de textos non configuré.' };
+      } else {
+        try { envoyerSms_(tel, texte); res.sms = { ok: true }; } catch (err) { res.sms = { ok: false, erreur: err.message }; }
+      }
+      journal.push([horodatage_(), nom, 'texto', masquerTel_(tel || String(d.telephone)), res.sms.ok ? 'envoyé' : (res.sms.non_configure ? 'non configuré' : 'échec'), res.sms.ok || res.sms.non_configure ? '' : res.sms.erreur]);
+    }
+    return res;
+  });
+  try { if (journal.length) { const sh = feuilleEnvois_(); journal.forEach(l => sh.appendRow(l)); } } catch (e) { /* le journal ne bloque jamais l'envoi */ }
+  return { ok: true, sms_configure: smsOk, resultats: resultats };
+}
 
 /* ---------- Diagnostic ---------- */
 function diagnostic_() {
@@ -424,9 +615,10 @@ function diagnostic_() {
   try { dossier_(); r.drive = true; } catch (e) { r.drive = false; }
   try { r.courriels_restants = MailApp.getRemainingDailyQuota(); r.courriel = r.courriels_restants > 0; } catch (e) { r.courriel = false; }
   try { urlBase_(); r.url_formulaire = true; } catch (e) { r.url_formulaire = false; }
-  r.cle_admin = String(CONFIG.CLE_ADMIN).length >= 8 && CONFIG.CLE_ADMIN !== 'CHANGEZ-MOI';
-  r.administrateurs = CONFIG.ADMINISTRATEURS.length;
-  r.evaluateurs = Object.keys(CONFIG.EVALUATEURS).length;
+  r.cle_admin = cleAdmin_().length >= 8 && cleAdmin_() !== 'CHANGEZ-MOI';
+  r.sms = smsConfigure_();
+  r.administrateurs = admins_().length;
+  r.evaluateurs = Object.keys(evals_()).length;
   r.ok = !!(r.feuille && r.drive && r.courriel && r.url_formulaire);
   return r;
 }
@@ -452,7 +644,7 @@ function envoyer_(o) {
 }
 function texteDe_(html) {
   return String(html || '')
-    .replace(/<a [^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/g, '$2 : $1')
+    .replace(/<a [^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/g, (m, h, t) => (t.trim() === h || t.trim() === '' ? h : t + ' : ' + h))
     .replace(/<\/(p|tr|table|div)>/g, '\n').replace(/<br\s*\/?>/g, '\n').replace(/<\/td>/g, ' ')
     .replace(/<[^>]+>/g, '')
     .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
@@ -476,8 +668,8 @@ function testCourriel_(cle) {
 }
 /** À exécuter dans l'éditeur (Exécuter › testerCourriel) : envoie un test au premier administrateur. */
 function testerCourriel() {
-  envoyer_({ to: CONFIG.ADMINISTRATEURS[0], name: CONFIG.NOM_EXPEDITEUR, subject: 'Test – Évaluation annuelle Flo-Fab', htmlBody: '<p>Courriel de test : l’envoi automatique fonctionne.</p>' });
-  Logger.log('Courriel de test envoyé à ' + CONFIG.ADMINISTRATEURS[0] + '. Quota restant : ' + MailApp.getRemainingDailyQuota());
+  envoyer_({ to: admins_()[0], name: CONFIG.NOM_EXPEDITEUR, subject: 'Test – Évaluation annuelle Flo-Fab', htmlBody: '<p>Courriel de test : l’envoi automatique fonctionne.</p>' });
+  Logger.log('Courriel de test envoyé à ' + admins_()[0] + '. Quota restant : ' + MailApp.getRemainingDailyQuota());
 }
 
 /* ---------- Utilitaires ---------- */
